@@ -1,0 +1,54 @@
+body {
+    font-size: 16px;
+    color: #444;
+}
+
+nav {
+    font-size: 18px;
+    margin: 40px auto;
+    max-width: 800px;
+    height: 25px;
+}
+
+nav > a {
+    float: left;
+}
+
+nav ul {
+    float: right;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin: 5px;
+}
+
+.content {
+    line-height: 1.6;
+    margin: 40px auto;
+    max-width: 600px;
+}
+
+h1, h2, h3 {
+    line-height: 1.2;
+}
+
+.date {
+    line-height: 2;
+    font-style: italic;
+    display: inline;
+    margin: 5px;
+}
+
+.tags {
+    padding: 0;
+    margin: 0;
+}
+
+.tags li {
+    font-style: italic;
+    display: inline;
+    margin: 5px;
+}
