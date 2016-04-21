@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+    <ul>
+    {% for year, dict in entries_dict | dictsort | reverse %}
+        <li>
+            <a href="/{{ year }}">{{ year }}</a>
+            <ul>
+            {% for month, entries_list in dict | dictsort | reverse %}
+                {% set entries_length = entries_list | length %}
+                <li>
+                    <a href="/{{ year }}/{{ month }}">{{ month }}</a> - {{ entries_length }}
+                        entr{{ 'y' if entries_length == 1 else 'ies' }}
+                </li>
+            {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+    </ul>
+{% endblock %}
