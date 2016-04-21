@@ -1,24 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
     <ul>
-    {% for year, months_dict in entries_dict | dictsort | reverse %}
+    {% for year, months_dict in entries | dictsort | reverse %}
         <li>
             <a href="/{{ year }}">{{ year }}</a>
             <ul>
             {% for month, days_dict in months_dict | dictsort | reverse %}
-                <a href="/{{ year }}/{{ month }}">{{ month }}</a>
-                <ul>
-                {% for day, entries_list in days_dict | dictsort | reverse %}
-                    <li>
-                        <a href="/{{ year }}/{{ month }}/{{ day }}">{{ day }}</a>
-                        <ul>
-                            {% for entry in entries_list | sort(reverse=True, attribute='date_written') %}
-                                <li><a href="/{{ year }}/{{ month }}/{{ day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                {% endfor %}
-                </ul>
+                <li>
+                    <a href="/{{ year }}/{{ month }}">{{ month }}</a>
+                    <ul>
+                    {% for day, entries_list in days_dict | dictsort | reverse %}
+                        <li>
+                            <a href="/{{ year }}/{{ month }}/{{ day }}">{{ day }}</a>
+                            <ul>
+                                {% for entry in entries_list | sort(reverse=True, attribute='date_written') %}
+                                    <li><a href="/{{ year }}/{{ month }}/{{ day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </li>
             {% endfor %}
             </ul>
         </li>

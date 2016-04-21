@@ -67,31 +67,34 @@ class Entry(db.Model):
     def __repr__(self):
         return '{}(path={!r})'.format(type(self).__name__, self.path)
 
+def date_conditions(**kwargs):
+    for attribute in {'year', 'month', 'day'}:
+        if attribute in kwargs:
+            yield db.extract(attribute, Entry.date_written) == kwargs[attribute]
+
 @app.route('/archive')
 @app.route('/<int:year>')
 @app.route('/<int:year>/<int:month>')
 @app.route('/<int:year>/<int:month>/<int:day>')
 def archive(**kwargs):
-    entries = collections.defaultdict(  # why
+    # I tried using an order_by query to sort the entries and then iterating over them in the
+    # template, but the template got so complicated that I just gave up and stuck with these
+    # ugly dicts
+    entries = collections.defaultdict(
         lambda: collections.defaultdict(
             lambda: collections.defaultdict(list)
         )
     )
-
-    conditions = [db.extract(attribute, Entry.date_written) == kwargs[attribute]
-                  for attribute in {'year', 'month', 'day'} if attribute in kwargs]
+    conditions = list(date_conditions(**kwargs))
     for entry in Entry.query.filter(*conditions) if conditions else Entry.query:
         month = '{:%m}'.format(entry.date_written)
         day = '{:%d}'.format(entry.date_written)
         entries[str(entry.date_written.year)][month][day].append(entry)
-
-    return flask.render_template('archive.html', entries_dict=entries)
+    return flask.render_template('archive.html', entries=entries)
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
 def entry(title_slug, **kwargs):
-    conditions = [db.extract(attribute, Entry.date_written) == kwargs[attribute]
-                  for attribute in {'year', 'month', 'day'} if attribute in kwargs]
-    entry = Entry.query.filter(*conditions, Entry.title_slug == title_slug).first()
+    entry = Entry.query.filter(*date_conditions(**kwargs), Entry.title_slug == title_slug).first()
     return flask.render_template('entry.html', entry=entry)
 
 def reload_database(archive_path):

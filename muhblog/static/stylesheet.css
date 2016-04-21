@@ -29,6 +29,7 @@ nav ul li {
     line-height: 1.6;
     margin: 40px auto;
     max-width: 600px;
+    word-wrap: break-word;
 }
 
 h1, h2, h3 {
