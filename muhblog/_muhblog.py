@@ -1,4 +1,3 @@
-import os
 import logging
 import pathlib
 import datetime
@@ -90,12 +89,28 @@ def archive(**kwargs):
         month = '{:%m}'.format(entry.date_written)
         day = '{:%d}'.format(entry.date_written)
         entries[str(entry.date_written.year)][month][day].append(entry)
+    if not entries:
+        flask.abort(404)
     return flask.render_template('archive.html', entries=entries)
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
 def entry(title_slug, **kwargs):
-    entry = Entry.query.filter(*date_conditions(**kwargs), Entry.title_slug == title_slug).first()
-    return flask.render_template('entry.html', entry=entry)
+    entry = Entry.query.filter(*date_conditions(**kwargs), Entry.title_slug == title_slug).first_or_404()
+    return flask.render_template('entry.html', title=entry.title, entry=entry)
+
+def render_error_template(error, image):
+    return flask.render_template('error.html', title='{} {}'.format(error.code, error.name),
+                                 image=image), error.code
+
+@app.errorhandler(404)
+def four_oh_four(error):
+    return render_error_template(error, image='/static/404.png')
+@app.errorhandler(500)
+def five_hunner(error):
+    return render_error_template(error, image='/static/500.jpg')
+@app.errorhandler(403)
+def four_oh_three(error):
+    return render_error_template(error, image='/static/403.jpg')
 
 def reload_database(archive_path):
     db.create_all()
@@ -113,7 +128,7 @@ def reload_database(archive_path):
             logging.debug('entry found for path, has not been modified: %s', ini_path)
 
     for entry in Entry.query:
-        if not os.path.exists(entry.path):
+        if not pathlib.Path(entry.path).exists():
             logging.debug('removing entry with nonexistent path from database: %s', entry.path)
             db.session.delete(entry)
 
