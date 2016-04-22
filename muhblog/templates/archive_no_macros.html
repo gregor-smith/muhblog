@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% set last_year = 9999 %}
+{% set last_month = 99 %}
+{% set last_day = 99 %}
+
+{% block content %}
+<ul>
+{% for entry in entries %}
+    {% if entry.date_written.year < last_year %}
+        {% if last_year != 9999 %}
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+        {% endif %}
+    <li>
+        <a href="/{{ entry.date_written.year }}">{{ entry.date_written.year }}</a>
+        <ul>
+            <li>
+                <a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}">{{ entry.date_written.month }}</a>
+                <ul>
+                    <li>
+                        <a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}">{{ entry.date_written.day }}</a>
+                        <ul>
+                            <li><a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
+                            {% set last_year = entry.date_written.year %}
+                            {% set last_month = entry.date_written.month %}
+                            {% set last_day = entry.date_written.day %}
+    {% elif entry.date_written.month < last_month %}
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <ul>
+            <li>
+                <a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}">{{ entry.date_written.month }}</a>
+                <ul>
+                    <li>
+                        <a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}">{{ entry.date_written.day }}</a>
+                        <ul>
+                            <li><a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
+                            {% set last_month = entry.date_written.month %}
+                            {% set last_day = entry.date_written.day %}
+    {% elif entry.date_written.day < last_day %}
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}">{{ entry.date_written.day }}</a>
+                        <ul>
+                            <li><a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
+                            {% set last_day = entry.date_written.day %}
+    {% elif entry.date_written.day == last_day %}
+                            <li><a href="/{{ entry.date_written.year }}/{{ entry.date_written.month }}/{{ entry.date_written.day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
+    {% endif %}
+{% endfor %}
+{% endblock %}

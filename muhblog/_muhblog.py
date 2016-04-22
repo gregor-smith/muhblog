@@ -1,7 +1,6 @@
 import logging
 import pathlib
 import datetime
-import collections
 import configparser
 
 import click
@@ -27,15 +26,17 @@ class Entry(db.Model):
     date_written = db.Column(db.DateTime, unique=True)
     date_modified = db.Column(db.DateTime)
     title_slug = db.Column(db.String(MAX_TITLE_LENGTH))
+    is_hidden = db.Column(db.Boolean)
 
-    def __init__(self, path, title, title_slug,
-                 markdown_text, date_written, date_modified):
+    def __init__(self, path, title, title_slug, markdown_text,
+                 date_written, date_modified, is_hidden):
         self.path = path
         self.title = title
         self.title_slug = title_slug
         self.markdown_text = markdown_text
         self.date_written = date_written
         self.date_modified = date_modified
+        self.is_hidden = is_hidden
 
     @classmethod
     def from_ini_path(cls, path):
@@ -50,7 +51,8 @@ class Entry(db.Model):
                    title_slug=slugify.slugify(title, max_length=MAX_TITLE_LENGTH),
                    markdown_text=entry['text'],
                    date_written=datetime.datetime.strptime(entry['date'], DATE_FORMAT),
-                   date_modified=datetime.datetime.fromtimestamp(path.stat().st_mtime))
+                   date_modified=datetime.datetime.fromtimestamp(path.stat().st_mtime),
+                   is_hidden=parser.getboolean('entry', 'is_hidden', fallback=True))
 
     def update_from_other(self, other):
         self.path = other.path
@@ -59,6 +61,7 @@ class Entry(db.Model):
         self.markdown_text = other.markdown_text
         self.date_written = other.date_written
         self.date_modified = other.date_modified
+        self.is_hidden = other.is_hidden
 
     def html_text(self):
         return flask.Markup(markdown.markdown(self.markdown_text))
@@ -67,7 +70,7 @@ class Entry(db.Model):
         return '{}(path={!r})'.format(type(self).__name__, self.path)
 
 def date_conditions(**kwargs):
-    for attribute in {'year', 'month', 'day'}:
+    for attribute in ['year', 'month', 'day']:
         if attribute in kwargs:
             yield db.extract(attribute, Entry.date_written) == kwargs[attribute]
 
@@ -76,41 +79,36 @@ def date_conditions(**kwargs):
 @app.route('/<int:year>/<int:month>')
 @app.route('/<int:year>/<int:month>/<int:day>')
 def archive(**kwargs):
-    # I tried using an order_by query to sort the entries and then iterating over them in the
-    # template, but the template got so complicated that I just gave up and stuck with these
-    # ugly dicts
-    entries = collections.defaultdict(
-        lambda: collections.defaultdict(
-            lambda: collections.defaultdict(list)
-        )
-    )
     conditions = list(date_conditions(**kwargs))
-    for entry in Entry.query.filter(*conditions) if conditions else Entry.query:
-        month = '{:%m}'.format(entry.date_written)
-        day = '{:%d}'.format(entry.date_written)
-        entries[str(entry.date_written.year)][month][day].append(entry)
-    if not entries:
-        flask.abort(404)
-    return flask.render_template('archive.html', entries=entries)
+    if not app.show_hidden:
+        conditions.append(Entry.is_hidden.is_(False))
+    query = Entry.query.filter(*conditions).order_by(Entry.date_written.desc())
+    return flask.render_template('archive.html', title='Archive', entries=query)
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
 def entry(title_slug, **kwargs):
-    entry = Entry.query.filter(*date_conditions(**kwargs), Entry.title_slug == title_slug).first_or_404()
+    conditions = [*date_conditions(**kwargs), Entry.title_slug == title_slug]
+    if not app.show_hidden:
+        conditions.append(Entry.is_hidden.is_(False))
+    entry = Entry.query.filter(*conditions).first_or_404()
     return flask.render_template('entry.html', title=entry.title, entry=entry)
 
-def render_error_template(error, image):
-    return flask.render_template('error.html', title='{} {}'.format(error.code, error.name),
-                                 image=image), error.code
+@app.route('/robots.txt')
+def robots():
+    return flask.send_from_directory(app.static_folder, 'robots.txt')
+
+def render_error_template(code, name, image):
+    return flask.render_template('error.html', title='{} {}'.format(code, name), image=image), code
 
 @app.errorhandler(404)
-def four_oh_four(error):
-    return render_error_template(error, image='/static/404.png')
-@app.errorhandler(500)
-def five_hunner(error):
-    return render_error_template(error, image='/static/500.jpg')
+def error_404(error):
+    return render_error_template(404, 'Not Found', '/static/404.png')
 @app.errorhandler(403)
-def four_oh_three(error):
-    return render_error_template(error, image='/static/403.jpg')
+def error_403(error):
+    return render_error_template(403, 'Forbidden', '/static/403.jpg')
+@app.errorhandler(500)
+def error_500(error):
+    return render_error_template(500, 'Internal Server Error', '/static/500.jpg')
 
 def reload_database(archive_path):
     db.create_all()
@@ -135,12 +133,13 @@ def reload_database(archive_path):
     db.session.commit()
 
 @click.command()
+@click.option('--archive', envvar='BLOG_ARCHIVE_PATH',
+              type=click.Path(file_okay=False, writable=True))
 @click.option('--host')
 @click.option('--port', type=int, default=9001, show_default=True)
 @click.option('--debug', is_flag=True, show_default=True)
-@click.option('--archive', envvar='BLOG_ARCHIVE_PATH',
-              type=click.Path(file_okay=False, writable=True))
-def main(host, port, debug, archive):
+@click.option('--show-hidden', is_flag=True, show_default=True)
+def main(archive, host, port, debug, show_hidden):
     if archive is None:
         raise click.BadParameter("either '--archive' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment variable must be set")
@@ -151,4 +150,6 @@ def main(host, port, debug, archive):
     CONFIG_DIRECTORY.mkdir(parents=True, exist_ok=True)
     reload_database(archive)
 
+    app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
+    app.show_hidden = show_hidden
     app.run(host=host, port=port, debug=debug)
