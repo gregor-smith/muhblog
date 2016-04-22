@@ -1,3 +1,4 @@
+import re
 import logging
 import pathlib
 import datetime
@@ -28,6 +29,8 @@ class Entry(db.Model):
     title_slug = db.Column(db.String(MAX_TITLE_LENGTH))
     is_hidden = db.Column(db.Boolean)
 
+    formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]', re.DOTALL)
+
     def __init__(self, path, title, title_slug, markdown_text,
                  date_written, date_modified, is_hidden):
         self.path = path
@@ -54,6 +57,21 @@ class Entry(db.Model):
                    date_modified=datetime.datetime.fromtimestamp(path.stat().st_mtime),
                    is_hidden=parser.getboolean('entry', 'is_hidden', fallback=True))
 
+    @staticmethod
+    def formatting_replacer(match):
+        tag_one, replacement, text, tag_two = match.groups()
+        if tag_one != tag_two:
+            return match.string
+        if tag_one == 'hidden':
+            return replacement or ''
+        return '<span class="spoiler">{}</span>'.format(text)
+
+    def formatted_text(self):
+        return self.formatting_regex.sub(self.formatting_replacer, self.markdown_text)
+
+    def html_text(self):
+        return flask.Markup(markdown.markdown(self.formatted_text()))
+
     def update_from_other(self, other):
         self.path = other.path
         self.title = other.title
@@ -62,9 +80,6 @@ class Entry(db.Model):
         self.date_written = other.date_written
         self.date_modified = other.date_modified
         self.is_hidden = other.is_hidden
-
-    def html_text(self):
-        return flask.Markup(markdown.markdown(self.markdown_text))
 
     def __repr__(self):
         return '{}(path={!r})'.format(type(self).__name__, self.path)

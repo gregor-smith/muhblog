@@ -61,3 +61,12 @@ h1, h2, h3 {
 .error img {
     max-height: 400px;
 }
+
+.spoiler {
+    background-color: black;
+    color: black;
+}
+
+.spoiler:hover {
+    color: white;
+}
