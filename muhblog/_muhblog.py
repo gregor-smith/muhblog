@@ -12,7 +12,7 @@ import markdown
 
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 MAX_TITLE_LENGTH = 100
-MAX_CACHE_SIZE = 128
+MAX_CACHE_SIZE = 256
 
 app = flask.Flask(__name__)
 
@@ -26,6 +26,12 @@ class Entry:
 
     def __repr__(self):
         return '{}(path={!r})'.format(type(self).__name__, self.path)
+
+    def __lt__(self, other):
+        try:
+            return self.datetime_written < other.datetime_written
+        except (AttributeError, TypeError):
+            return NotImplemented
 
     def reload(self):
         self.parser.clear()
@@ -91,16 +97,20 @@ class Archive(dict):
                         entry.reload()
                 else:
                     self[path] = Entry(path)
-        for path in self.keys():
+        for path in list(self.keys()):
             if not path.exists():
                 del self[path]
+
+    @staticmethod
+    def date_comparison_function(attribute, value):
+        return lambda entry: getattr(entry.datetime_written, attribute) == value
 
     def default_conditions(self, **kwargs):
         if not self.show_hidden:
             yield lambda entry: not entry.is_hidden
         for attribute in ['year', 'month', 'day']:
             if attribute in kwargs:
-                yield lambda entry: getattr(entry.datetime_written, attribute) == kwargs[attribute]
+                yield self.date_comparison_function(attribute, kwargs[attribute])
 
     def filter(self, *additional_conditions, **kwargs):
         conditions = [*self.default_conditions(**kwargs), *additional_conditions]
@@ -116,7 +126,7 @@ def archive(**kwargs):
     entries = list(app.archive.filter(**kwargs))
     if not entries:
         flask.abort(404)
-    entries.sort(key=lambda entry: entry.datetime_written, reverse=True)
+    entries.sort(reverse=True)
     return flask.render_template('archive.html', title='Archive', entries=entries)
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
@@ -161,6 +171,5 @@ def main(archive_path, host, port, debug, show_hidden):
                         level=logging.DEBUG if debug else logging.INFO)
 
     app.archive = Archive(archive_path, show_hidden)
-
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
     app.run(host=host, port=port, debug=debug)
