@@ -1,8 +1,10 @@
 import re
+import time
 import logging
 import pathlib
 import datetime
 import functools
+import threading
 import configparser
 
 import click
@@ -94,12 +96,21 @@ class Archive(dict):
                 if path in self:
                     entry = self[path]
                     if path.stat().st_mtime > entry.timestamp_modified:
+                        app.logger.info('entry path modified, reloading - %r', path)
                         entry.reload()
+                    else:
+                        app.logger.debug('entry path has not been modified - %r', path)
                 else:
+                    app.logger.debug('adding new entry - %r', path)
                     self[path] = Entry(path)
         for path in list(self.keys()):
             if not path.exists():
                 del self[path]
+
+    def reloader_thread_worker(self, interval):
+        while True:
+            time.sleep(interval)
+            self.reload()
 
     @staticmethod
     def date_comparison_function(attribute, value):
@@ -162,14 +173,21 @@ def error_500(error):
 @click.option('--port', type=int, default=9001, show_default=True)
 @click.option('--debug', is_flag=True, show_default=True)
 @click.option('--show-hidden', is_flag=True, show_default=True)
-def main(archive_path, host, port, debug, show_hidden):
+@click.option('--reload-interval', type=int, default=300, show_default=True)
+def main(archive_path, host, port, debug, show_hidden, reload_interval):
     if archive_path is None:
-        raise click.BadParameter("either '--archive' must be provided "
+        raise click.BadParameter("either '--archive-path' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment variable must be set")
 
-    logging.basicConfig(format='[%(asctime)s %(levelname)s] %(message)s',
-                        level=logging.DEBUG if debug else logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('[%(asctime)s %(levelname)s] %(message)s'))
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
     app.archive = Archive(archive_path, show_hidden)
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
+
+    reloader_thread = threading.Thread(target=app.archive.reloader_thread_worker,
+                                       kwargs={'interval': reload_interval}, daemon=True)
+    reloader_thread.start()
     app.run(host=host, port=port, debug=debug)
