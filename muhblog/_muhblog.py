@@ -96,15 +96,23 @@ class Archive(dict):
                 if path in self:
                     entry = self[path]
                     if path.stat().st_mtime > entry.timestamp_modified:
-                        app.logger.info('entry path modified, reloading - %r', path)
-                        entry.reload()
+                        app.logger.info('entry file modified, reloading - %r', path)
+                        try:
+                            entry.reload()
+                        except Exception:
+                            app.logger.exception('reload threw exception, removing - %r', path)
+                            del self[path]
                     else:
-                        app.logger.debug('entry path has not been modified - %r', path)
+                        app.logger.debug('entry file has not been modified - %r', path)
                 else:
                     app.logger.debug('adding new entry - %r', path)
-                    self[path] = Entry(path)
+                    try:
+                        self[path] = Entry(path)
+                    except Exception:
+                        app.logger.exception('exception creating entry, skipping - %r', path)
         for path in list(self.keys()):
             if not path.exists():
+                app.logger.info('entry no longer exists, removing - %r', path)
                 del self[path]
 
     def reloader_thread_worker(self, interval):
@@ -187,7 +195,8 @@ def main(archive_path, host, port, debug, show_hidden, reload_interval):
     app.archive = Archive(archive_path, show_hidden)
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
-    reloader_thread = threading.Thread(target=app.archive.reloader_thread_worker,
-                                       kwargs={'interval': reload_interval}, daemon=True)
-    reloader_thread.start()
+    archive_reloader_thread = threading.Thread(target=app.archive.reloader_thread_worker,
+                                               kwargs={'interval': reload_interval},
+                                               name='archive_reloader', daemon=True)
+    archive_reloader_thread.start()
     app.run(host=host, port=port, debug=debug)
