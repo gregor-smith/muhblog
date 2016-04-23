@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% macro entry_line(entry) %}
-    <li><a href="/{{ entry.datetime_written.year }}/{{ entry.datetime_written.month }}/{{ entry.datetime_written.day }}/{{ entry.title_slug() }}">{{ entry.title }}</a></li>
+    <li><a href="/{{ entry.datetime_written.year }}/{{ entry.datetime_written.month }}/{{ entry.datetime_written.day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
 {% endmacro %}
 
 {% macro day(entry) %}

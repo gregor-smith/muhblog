@@ -3,7 +3,6 @@ import time
 import logging
 import pathlib
 import datetime
-import functools
 import threading
 import configparser
 
@@ -14,7 +13,6 @@ import markdown
 
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 MAX_TITLE_LENGTH = 100
-MAX_CACHE_SIZE = 256
 
 app = flask.Flask(__name__)
 
@@ -23,6 +21,7 @@ class Entry:
 
     def __init__(self, path):
         self.parser = configparser.ConfigParser(interpolation=None)
+
         self.path = path
         self.reload()
 
@@ -35,26 +34,6 @@ class Entry:
         except (AttributeError, TypeError):
             return NotImplemented
 
-    def reload(self):
-        self.parser.clear()
-        self.parser.read(str(self.path), encoding='utf-8')
-
-        entry = self.parser['entry']
-
-        self.title = entry['title']
-        self.markdown_text = entry['text']
-        self.datetime_written = datetime.datetime.strptime(entry['date'], DATE_FORMAT)
-        self.timestamp_modified = self.path.stat().st_mtime
-        self.is_hidden = self.parser.getboolean('entry', 'is_hidden', fallback=True)
-
-    @staticmethod
-    @functools.lru_cache(MAX_CACHE_SIZE)
-    def _slugify(text):
-        return slugify.slugify(text, max_length=MAX_TITLE_LENGTH)
-
-    def title_slug(self):
-        return self._slugify(self.title)
-
     @staticmethod
     def formatting_replacer(match):
         tag_one, replacement, text, tag_two = match.groups()
@@ -64,21 +43,25 @@ class Entry:
             return replacement or ''
         return '<span class="spoiler">{}</span>'.format(text)
 
-    @classmethod
-    @functools.lru_cache(MAX_CACHE_SIZE)
-    def _format_text(cls, text):
-        return cls.formatting_regex.sub(cls.formatting_replacer, text)
+    def reload(self):
+        self.parser.clear()
+        self.parser.read(str(self.path), encoding='utf-8')
 
-    def formatted_text(self):
-        return self._format_text(self.markdown_text)
+        entry = self.parser['entry']
 
-    @staticmethod
-    @functools.lru_cache(MAX_CACHE_SIZE)
-    def _markdown(text):
-        return flask.Markup(markdown.markdown(text))
+        self.title = entry['title']
+        self.title_slug = slugify.slugify(self.title, max_length=100)
 
-    def html_text(self):
-        return self._markdown(self.formatted_text())
+        self.tags = {tag: slugify.slugify(tag) for tag in entry['tags'].split('\n') if tag}
+
+        self.markdown_text = entry['text']
+        self.formatted_text = self.formatting_regex.sub(self.formatting_replacer,
+                                                        self.markdown_text)
+        self.html_text = flask.Markup(markdown.markdown(self.formatted_text))
+
+        self.datetime_written = datetime.datetime.strptime(entry['date'], DATE_FORMAT)
+        self.timestamp_modified = self.path.stat().st_mtime
+        self.is_hidden = self.parser.getboolean('entry', 'is_hidden', fallback=True)
 
 class Archive(dict):
     def __init__(self, path, show_hidden):
@@ -124,7 +107,7 @@ class Archive(dict):
     def date_comparison_function(attribute, value):
         return lambda entry: getattr(entry.datetime_written, attribute) == value
 
-    def default_conditions(self, **kwargs):
+    def default_filter_conditions(self, **kwargs):
         if not self.show_hidden:
             yield lambda entry: not entry.is_hidden
         for attribute in ['year', 'month', 'day']:
@@ -132,17 +115,21 @@ class Archive(dict):
                 yield self.date_comparison_function(attribute, kwargs[attribute])
 
     def filter(self, *additional_conditions, **kwargs):
-        conditions = [*self.default_conditions(**kwargs), *additional_conditions]
+        conditions = [*self.default_filter_conditions(**kwargs), *additional_conditions]
         for entry in self.values():
             if all(condition(entry) for condition in conditions):
                 yield entry
 
 @app.route('/archive')
+@app.route('/tag/<tag_slug>')
 @app.route('/<int:year>')
 @app.route('/<int:year>/<int:month>')
 @app.route('/<int:year>/<int:month>/<int:day>')
-def archive(**kwargs):
-    entries = list(app.archive.filter(**kwargs))
+def archive(tag_slug=None, **kwargs):
+    conditions = []
+    if tag_slug is not None:
+        conditions.append(lambda entry: tag_slug in entry.tags.values())
+    entries = list(app.archive.filter(*conditions, **kwargs))
     if not entries:
         flask.abort(404)
     entries.sort(reverse=True)
@@ -150,7 +137,7 @@ def archive(**kwargs):
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
 def entry(title_slug, **kwargs):
-    entries = app.archive.filter(lambda entry: entry.title_slug() == title_slug, **kwargs)
+    entries = app.archive.filter(lambda entry: entry.title_slug == title_slug, **kwargs)
     try:
         entry = next(entries)
     except StopIteration:

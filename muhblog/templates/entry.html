@@ -2,10 +2,10 @@
 {% block content %}
     <h1 class="title">{{ entry.title }}</h1>
     <p class="date">{{ entry.datetime_written }}</p>
-<!--     <ul class="tags">
-    {% for tag in tags %}
-        <li>{{ tag }}</li>
+    <ul class="tags">
+    {% for tag, slug in entry.tags | dictsort %}
+        <li><a href="/tag/{{ slug }}">{{ tag }}</a></li>
     {% endfor %}
-    </ul> -->
-    {{ entry.html_text() }}
+    </ul>
+    {{ entry.html_text }}
 {% endblock %}
