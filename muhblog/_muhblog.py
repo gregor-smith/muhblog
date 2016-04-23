@@ -19,10 +19,12 @@ app = flask.Flask(__name__)
 class Entry:
     formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]', re.DOTALL)
 
-    def __init__(self, path):
+    def __init__(self, path, archive):
         self.parser = configparser.ConfigParser(interpolation=None)
 
         self.path = path
+        self.archive = archive
+
         self.reload()
 
     def __repr__(self):
@@ -34,13 +36,12 @@ class Entry:
         except (AttributeError, TypeError):
             return NotImplemented
 
-    @staticmethod
-    def formatting_replacer(match):
+    def formatting_replacer(self, match):
         tag_one, replacement, text, tag_two = match.groups()
         if tag_one != tag_two:
             return match.string
         if tag_one == 'hidden':
-            return replacement or ''
+            return text if self.archive.show_hidden else (replacement or '')
         return '<span class="spoiler">{}</span>'.format(text)
 
     def reload(self):
@@ -90,7 +91,7 @@ class Archive(dict):
                 else:
                     app.logger.debug('adding new entry - %r', path)
                     try:
-                        self[path] = Entry(path)
+                        self[path] = Entry(path, self)
                     except Exception:
                         app.logger.exception('exception creating entry, skipping - %r', path)
         for path in list(self.keys()):
@@ -104,18 +105,12 @@ class Archive(dict):
             self.reload()
 
     @staticmethod
-    def date_comparison_function(attribute, value):
+    def date_condition(attribute, value):
         return lambda entry: getattr(entry.datetime_written, attribute) == value
 
-    def default_filter_conditions(self, **kwargs):
+    def filter(self, *conditions):
         if not self.show_hidden:
-            yield lambda entry: not entry.is_hidden
-        for attribute in ['year', 'month', 'day']:
-            if attribute in kwargs:
-                yield self.date_comparison_function(attribute, kwargs[attribute])
-
-    def filter(self, *additional_conditions, **kwargs):
-        conditions = [*self.default_filter_conditions(**kwargs), *additional_conditions]
+            conditions = [lambda entry: not entry.is_hidden, *conditions]
         for entry in self.values():
             if all(condition(entry) for condition in conditions):
                 yield entry
@@ -125,19 +120,36 @@ class Archive(dict):
 @app.route('/<int:year>')
 @app.route('/<int:year>/<int:month>')
 @app.route('/<int:year>/<int:month>/<int:day>')
-def archive(tag_slug=None, **kwargs):
+def archive(tag_slug=None, year=None, month=None, day=None):
     conditions = []
-    if tag_slug is not None:
+    if year is not None:
+        title_parts = [str(year)]
+        conditions.append(app.archive.date_condition('year', year))
+        if month is not None:
+            title_parts.append('{:0>2}'.format(month))
+            conditions.append(app.archive.date_condition('month', month))
+            if day is not None:
+                title_parts.append('{:0>2}'.format(day))
+                conditions.append(app.archive.date_condition('day', day))
+        title = '/'.join(reversed(title_parts))
+    elif tag_slug is not None:
+        title = tag_slug
         conditions.append(lambda entry: tag_slug in entry.tags.values())
-    entries = list(app.archive.filter(*conditions, **kwargs))
+    else:
+        title = 'Archive'
+
+    entries = list(app.archive.filter(*conditions))
     if not entries:
         flask.abort(404)
     entries.sort(reverse=True)
-    return flask.render_template('archive.html', title='Archive', entries=entries)
+
+    return flask.render_template('archive.html', title=title, entries=entries)
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
 def entry(title_slug, **kwargs):
-    entries = app.archive.filter(lambda entry: entry.title_slug == title_slug, **kwargs)
+    conditions = (app.archive.date_condition(attribute, kwargs[attribute])
+                  for attribute in ['year', 'month', 'day'])
+    entries = app.archive.filter(*conditions, lambda entry: entry.title_slug == title_slug)
     try:
         entry = next(entries)
     except StopIteration:
