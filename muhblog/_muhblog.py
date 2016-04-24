@@ -16,12 +16,45 @@ MAX_TITLE_LENGTH = 100
 
 app = flask.Flask(__name__)
 
+class HiddenTagPattern(markdown.postprocessors.Postprocessor):
+    regex = re.compile(r'\[hidden(?: (.+?))?\](.+?)\[/hidden\]', re.DOTALL)
+
+    def __init__(self, show_hidden, *args, **kwargs):
+        self.show_hidden = show_hidden
+        super().__init__(*args, **kwargs)
+
+    def replacer(self, match):
+        replacement, text = match.groups()
+        return text if self.show_hidden else (replacement or '')
+
+    def run(self, text):
+        return self.regex.sub(self.replacer, text)
+
+class HiddenTagExtension(markdown.Extension):
+    def __init__(self, show_hidden, **kwargs):
+        self.show_hidden = show_hidden
+        super().__init__(**kwargs)
+
+    def extendMarkdown(self, md, md_globals):
+        md.postprocessors[type(self).__name__] = HiddenTagPattern(self.show_hidden)
+
+class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
+    def handleMatch(self, match):
+        element = markdown.util.etree.Element('span')
+        element.set('class', 'spoiler')
+        element.text = markdown.util.AtomicString(match.group('text'))
+        return element
+
+class SpoilerTagExtension(markdown.Extension):
+    regex_pattern = r'\[spoiler\](?P<text>.+?)\[/spoiler\]'
+
+    def extendMarkdown(self, md, md_globals):
+        md.inlinePatterns[type(self).__name__] = SpoilerTagPattern(self.regex_pattern, md)
+
 class Entry:
     formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]', re.DOTALL)
 
     def __init__(self, archive, path):
-        self.parser = markdown.Markdown(extensions=[markdown.extensions.meta.MetaExtension()])
-
         self.archive = archive
         self.path = path
 
@@ -36,24 +69,20 @@ class Entry:
         except (AttributeError, TypeError):
             return NotImplemented
 
-    def formatting_replacer(self, match):
-        tag_one, replacement, text, tag_two = match.groups()
-        if tag_one != tag_two:
-            return match.string
-        if tag_one == 'hidden':
-            return text if self.archive.show_hidden else (replacement or '')
-        return '<span class="spoiler">{}</span>'.format(text)
-
     @staticmethod
-    def parse_bool(string):
+    def string_to_boolean(string):
         string = string.lower()
-        if string in {'true', 'yes', '1'}:
+        if string in {'true', 'yes', 'aye', '1'}:
             return True
-        if string in {'false', 'no', '0'}:
+        if string in {'false', 'no', 'naw', '0'}:
             return False
         raise ValueError(string)
 
     def reload(self):
+        self.parser = markdown.Markdown(extensions=[markdown.extensions.meta.MetaExtension(),
+                                                    HiddenTagExtension(self.archive.show_hidden),
+                                                    SpoilerTagExtension()])
+
         self.text = flask.Markup(self.parser.convert(self.path.read_text(encoding='utf-8')))
         self.title = self.parser.Meta['title'][0]
         self.title_slug = slugify.slugify(self.title, max_length=100)
@@ -61,7 +90,7 @@ class Entry:
                                                            DATE_FORMAT)
         self.timestamp_modified = self.path.stat().st_mtime
         self.tags = {tag: slugify.slugify(tag) for tag in self.parser.Meta['tags']}
-        self.is_hidden = (self.parse_bool(self.parser.Meta['is_hidden'][0])
+        self.is_hidden = (self.string_to_boolean(self.parser.Meta['is_hidden'][0])
                           if 'is_hidden' in self.parser.Meta else True)
 
 class Archive(dict):
