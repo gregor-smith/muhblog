@@ -4,12 +4,12 @@ import logging
 import pathlib
 import datetime
 import threading
-import configparser
 
 import click
 import flask
 import slugify
 import markdown
+import markdown.extensions.meta
 
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 MAX_TITLE_LENGTH = 100
@@ -20,7 +20,7 @@ class Entry:
     formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]', re.DOTALL)
 
     def __init__(self, archive, path):
-        self.parser = configparser.ConfigParser(interpolation=None)
+        self.parser = markdown.Markdown(extensions=[markdown.extensions.meta.MetaExtension()])
 
         self.archive = archive
         self.path = path
@@ -44,25 +44,25 @@ class Entry:
             return text if self.archive.show_hidden else (replacement or '')
         return '<span class="spoiler">{}</span>'.format(text)
 
+    @staticmethod
+    def parse_bool(string):
+        string = string.lower()
+        if string in {'true', 'yes', '1'}:
+            return True
+        if string in {'false', 'no', '0'}:
+            return False
+        raise ValueError(string)
+
     def reload(self):
-        self.parser.clear()
-        self.parser.read(str(self.path), encoding='utf-8')
-
-        entry = self.parser['entry']
-
-        self.title = entry['title']
+        self.text = flask.Markup(self.parser.convert(self.path.read_text(encoding='utf-8')))
+        self.title = self.parser.Meta['title'][0]
         self.title_slug = slugify.slugify(self.title, max_length=100)
-
-        self.tags = {tag: slugify.slugify(tag) for tag in entry['tags'].split('\n') if tag}
-
-        self.markdown_text = entry['text']
-        self.formatted_text = self.formatting_regex.sub(self.formatting_replacer,
-                                                        self.markdown_text)
-        self.html_text = flask.Markup(markdown.markdown(self.formatted_text))
-
-        self.datetime_written = datetime.datetime.strptime(entry['date'], DATE_FORMAT)
+        self.datetime_written = datetime.datetime.strptime(self.parser.Meta['date'][0],
+                                                           DATE_FORMAT)
         self.timestamp_modified = self.path.stat().st_mtime
-        self.is_hidden = self.parser.getboolean('entry', 'is_hidden', fallback=True)
+        self.tags = {tag: slugify.slugify(tag) for tag in self.parser.Meta['tags']}
+        self.is_hidden = (self.parse_bool(self.parser.Meta['is_hidden'][0])
+                          if 'is_hidden' in self.parser.Meta else True)
 
 class Archive(dict):
     def __init__(self, app, path, show_hidden, reload_interval):
@@ -87,7 +87,7 @@ class Archive(dict):
     def reload(self):
         self.reload_finish_event.clear()
 
-        for path in self.path.glob('*.ini'):
+        for path in self.path.glob('*.md'):
             if path.is_file():
                 if path in self:
                     entry = self[path]
