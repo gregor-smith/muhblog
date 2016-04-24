@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 
-{% macro entry_line(entry) %}
-    <li><a href="/{{ entry.datetime_written.year }}/{{ entry.datetime_written.month }}/{{ entry.datetime_written.day }}/{{ entry.title_slug }}">{{ entry.title }}</a></li>
+{% macro entry_line(entry, year, month, day) %}
+    <li>
+        <a href="/{{ year }}/{{ month }}/{{ day }}/{{ entry.title_slug }}">{{ entry.title }}</a>
+    </li>
 {% endmacro %}
 
-{% macro day(entry) %}
-    <a href="/{{ entry.datetime_written.year }}/{{ entry.datetime_written.month }}/{{ entry.datetime_written.day }}">{{ entry.datetime_written.day }}</a>
+{% macro day_lines(entry, year, month, day) %}
+    <a href="/{{ year }}/{{ month }}/{{ day }}">{{ day }}</a>
     <ul>
-        {{ entry_line(entry) }}
+        {{ entry_line(entry, year, month, day) }}
 {% endmacro %}
 
-{% macro month(entry) %}
+{% macro month_lines(entry, year, month) %}
     <ul>
         <li>
-            <a href="/{{ entry.datetime_written.year }}/{{ entry.datetime_written.month }}">{{ entry.datetime_written.month }}</a>
+            <a href="/{{ year }}/{{ month }}">{{ month }}</a>
             <ul>
                 <li>
 {% endmacro %}
@@ -25,7 +27,12 @@
 {% block content %}
     <ul>
         {% for entry in entries %}
-            {% if entry.datetime_written.year < last_year %}
+            {% set year = entry.datetime_written.year %}
+            {% set month = entry.datetime_written.month %}
+            {% set month_str = '{:0>2}'.format(month) %}
+            {% set day = entry.datetime_written.day %}
+            {% set day_str = '{:0>2}'.format(day) %}
+            {% if year < last_year %}
                 {% if last_year != 9999 %}
                                         </ul>
                                     </li>
@@ -35,30 +42,30 @@
                     </li>
                 {% endif %}
                 <li>
-                    <a href="/{{ entry.datetime_written.year }}">{{ entry.datetime_written.year }}</a>
-                {{ month(entry) }}
-                    {{ day(entry) }}
-                {% set last_year = entry.datetime_written.year %}
-                {% set last_month = entry.datetime_written.month %}
-                {% set last_day = entry.datetime_written.day %}
-            {% elif entry.datetime_written.month < last_month %}
+                    <a href="/{{ year }}">{{ year }}</a>
+                {{ month_lines(entry, year, month_str) }}
+                    {{ day_lines(entry, year, month_str, day_str) }}
+                {% set last_year = year %}
+                {% set last_month = month %}
+                {% set last_day = day %}
+            {% elif month < last_month %}
                                 </ul>
                             </li>
                         </ul>
                     </li>
                 </ul>
-                {{ month(entry) }}
-                    {{ day(entry) }}
-                {% set last_month = entry.datetime_written.month %}
-                {% set last_day = entry.datetime_written.day %}
-            {% elif entry.datetime_written.day < last_day %}
+                {{ month_lines(entry, year, month_str) }}
+                    {{ day_lines(entry, year, month_str, day_str) }}
+                {% set last_month = month %}
+                {% set last_day = day %}
+            {% elif day < last_day %}
                     </ul>
                 </li>
                 <li>
-                    {{ day(entry) }}
-                {% set last_day = entry.datetime_written.day %}
-            {% elif entry.datetime_written.day == last_day %}
-                {{ entry_line(entry) }}
+                    {{ day_lines(entry, year, month_str, day_str) }}
+                {% set last_day = day %}
+            {% elif day == last_day %}
+                {{ entry_line(entry, year, month_str, day_str) }}
             {% endif %}
         {% endfor %}
     </ul>

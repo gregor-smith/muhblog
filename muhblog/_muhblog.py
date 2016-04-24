@@ -19,11 +19,11 @@ app = flask.Flask(__name__)
 class Entry:
     formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]', re.DOTALL)
 
-    def __init__(self, path, archive):
+    def __init__(self, archive, path):
         self.parser = configparser.ConfigParser(interpolation=None)
 
-        self.path = path
         self.archive = archive
+        self.path = path
 
         self.reload()
 
@@ -65,44 +65,54 @@ class Entry:
         self.is_hidden = self.parser.getboolean('entry', 'is_hidden', fallback=True)
 
 class Archive(dict):
-    def __init__(self, path, show_hidden):
+    def __init__(self, app, path, show_hidden, reload_interval):
         super().__init__()
+        self.app = app
         self.path = pathlib.Path(path)
         self.show_hidden = show_hidden
+        self.reload_interval = reload_interval
 
-        self.reload()
+        self.reload_finish_event = threading.Event()
+        self.reload_finish_event.set()
+        self.reload_thread = threading.Thread(target=self.reload_thread_worker, daemon=True)
+        self.reload_thread.start()
 
     __repr__ = Entry.__repr__
 
+    def reload_thread_worker(self):
+        while True:
+            self.reload()
+            time.sleep(self.reload_interval)
+
     def reload(self):
+        self.reload_finish_event.clear()
+
         for path in self.path.glob('*.ini'):
             if path.is_file():
                 if path in self:
                     entry = self[path]
                     if path.stat().st_mtime > entry.timestamp_modified:
-                        app.logger.info('entry file modified, reloading - %r', path)
+                        self.app.logger.info('entry file modified, reloading - %r', path)
                         try:
                             entry.reload()
                         except Exception:
-                            app.logger.exception('reload threw exception, removing - %r', path)
+                            self.app.logger.exception('reload threw exception, removing - %r', path)
                             del self[path]
                     else:
-                        app.logger.debug('entry file has not been modified - %r', path)
+                        self.app.logger.debug('entry file has not been modified - %r', path)
                 else:
-                    app.logger.debug('adding new entry - %r', path)
+                    self.app.logger.debug('adding new entry - %r', path)
                     try:
-                        self[path] = Entry(path, self)
+                        self[path] = Entry(self, path)
                     except Exception:
-                        app.logger.exception('exception creating entry, skipping - %r', path)
+                        self.app.logger.exception('exception creating entry, skipping - %r', path)
+
         for path in list(self.keys()):
             if not path.exists():
-                app.logger.info('entry no longer exists, removing - %r', path)
+                self.app.logger.info('entry no longer exists, removing - %r', path)
                 del self[path]
 
-    def reloader_thread_worker(self, interval):
-        while True:
-            time.sleep(interval)
-            self.reload()
+        self.reload_finish_event.set()
 
     @staticmethod
     def date_condition(attribute, value):
@@ -121,6 +131,8 @@ class Archive(dict):
 @app.route('/<int:year>/<int:month>')
 @app.route('/<int:year>/<int:month>/<int:day>')
 def archive(tag_slug=None, year=None, month=None, day=None):
+    app.archive.reload_finish_event.wait()
+
     conditions = []
     if year is not None:
         title_parts = [str(year)]
@@ -147,6 +159,8 @@ def archive(tag_slug=None, year=None, month=None, day=None):
 
 @app.route('/<int:year>/<int:month>/<int:day>/<title_slug>')
 def entry(title_slug, **kwargs):
+    app.archive.reload_finish_event.wait()
+
     conditions = (app.archive.date_condition(attribute, kwargs[attribute])
                   for attribute in ['year', 'month', 'day'])
     entries = app.archive.filter(*conditions, lambda entry: entry.title_slug == title_slug)
@@ -191,11 +205,6 @@ def main(archive_path, host, port, debug, show_hidden, reload_interval):
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-    app.archive = Archive(archive_path, show_hidden)
+    app.archive = Archive(app, archive_path, show_hidden, reload_interval)
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
-
-    archive_reloader_thread = threading.Thread(target=app.archive.reloader_thread_worker,
-                                               kwargs={'interval': reload_interval},
-                                               name='archive_reloader', daemon=True)
-    archive_reloader_thread.start()
     app.run(host=host, port=port, debug=debug)
