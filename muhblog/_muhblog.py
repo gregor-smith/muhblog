@@ -237,3 +237,6 @@ def main(archive_path, host, port, debug, show_hidden, reload_interval):
     app.archive = Archive(app, archive_path, show_hidden, reload_interval)
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
     app.run(host=host, port=port, debug=debug)
+
+if __name__ == '__main__':
+    main()
