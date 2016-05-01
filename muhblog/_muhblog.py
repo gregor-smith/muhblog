@@ -2,8 +2,8 @@ import re
 import time
 import logging
 import pathlib
-import datetime
 import threading
+from datetime import datetime
 
 import click
 import flask
@@ -36,7 +36,8 @@ class HiddenTagExtension(markdown.Extension):
         super().__init__(**kwargs)
 
     def extendMarkdown(self, md, md_globals):
-        md.postprocessors[type(self).__name__] = HiddenTagPattern(self.show_hidden)
+        md.postprocessors[type(self).__name__] \
+            = HiddenTagPattern(self.show_hidden)
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, match):
@@ -49,10 +50,12 @@ class SpoilerTagExtension(markdown.Extension):
     regex_pattern = r'\[spoiler\](?P<text>.+?)\[/spoiler\]'
 
     def extendMarkdown(self, md, md_globals):
-        md.inlinePatterns[type(self).__name__] = SpoilerTagPattern(self.regex_pattern, md)
+        md.inlinePatterns[type(self).__name__] \
+            = SpoilerTagPattern(self.regex_pattern, md)
 
 class Entry:
-    formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]', re.DOTALL)
+    formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]',
+                                  re.DOTALL)
 
     def __init__(self, archive, path):
         self.archive = archive
@@ -79,31 +82,44 @@ class Entry:
         raise ValueError(string)
 
     def reload(self):
-        self.parser = markdown.Markdown(extensions=[markdown.extensions.meta.MetaExtension(),
-                                                    HiddenTagExtension(self.archive.show_hidden),
-                                                    SpoilerTagExtension()])
+        self.parser = markdown.Markdown(
+            extensions=[markdown.extensions.meta.MetaExtension(),
+                        HiddenTagExtension(self.archive.show_hidden),
+                        SpoilerTagExtension()]
+        )
 
-        self.text = flask.Markup(self.parser.convert(self.path.read_text(encoding='utf-8')))
+        self.text = flask.Markup(
+            self.parser.convert(self.path.read_text(encoding='utf-8'))
+        )
         self.title = self.parser.Meta['title'][0]
         self.title_slug = slugify.slugify(self.title, max_length=100)
-        self.datetime_written = datetime.datetime.strptime(self.parser.Meta['date'][0],
-                                                           DATE_FORMAT)
+        self.datetime_written = datetime.strptime(self.parser.Meta['date'][0],
+                                                  DATE_FORMAT)
         self.timestamp_modified = self.path.stat().st_mtime
-        self.tags = {tag: slugify.slugify(tag) for tag in self.parser.Meta['tags']}
-        self.is_hidden = (self.string_to_boolean(self.parser.Meta['is_hidden'][0])
-                          if 'is_hidden' in self.parser.Meta else True)
+        self.tags = {tag: slugify.slugify(tag)
+                     for tag in self.parser.Meta['tags']}
+        if any(tag in self.tags for tag in self.archive.restrict_tags):
+            if 'is_hidden' in self.parser.Meta:
+                is_hidden_string = self.parser.Meta['is_hidden'][0]
+                self.is_hidden = self.string_to_boolean(is_hidden_string)
+            else:
+                self.is_hidden = True
+        else:
+            self.is_hidden = True
 
 class Archive(dict):
-    def __init__(self, app, path, show_hidden, reload_interval):
+    def __init__(self, app, path, show_hidden, reload_interval, restrict_tags):
         super().__init__()
         self.app = app
         self.path = pathlib.Path(path)
         self.show_hidden = show_hidden
         self.reload_interval = reload_interval
+        self.restrict_tags = restrict_tags
 
         self.reload_finish_event = threading.Event()
         self.reload_finish_event.set()
-        self.reload_thread = threading.Thread(target=self.reload_thread_worker, daemon=True)
+        self.reload_thread = threading.Thread(target=self.reload_thread_worker,
+                                              daemon=True)
         self.reload_thread.start()
 
     __repr__ = Entry.__repr__
@@ -121,31 +137,37 @@ class Archive(dict):
                 if path in self:
                     entry = self[path]
                     if path.stat().st_mtime > entry.timestamp_modified:
-                        self.app.logger.info('entry file modified, reloading - %r', path)
+                        self.app.logger.info('entry file modified, '
+                                             'reloading - %r', path)
                         try:
                             entry.reload()
                         except Exception:
-                            self.app.logger.exception('reload threw exception, removing - %r', path)
+                            self.app.logger.exception(
+                                'reload threw exception, removing - %r', path
+                            )
                             del self[path]
                     else:
-                        self.app.logger.debug('entry file has not been modified - %r', path)
+                        self.app.logger.debug('entry file has not been '
+                                              'modified - %r', path)
                 else:
                     self.app.logger.debug('adding new entry - %r', path)
                     try:
                         self[path] = Entry(self, path)
                     except Exception:
-                        self.app.logger.exception('exception creating entry, skipping - %r', path)
+                        self.app.logger.exception('exception creating entry, '
+                                                  'skipping - %r', path)
 
         for path in list(self.keys()):
             if not path.exists():
-                self.app.logger.info('entry no longer exists, removing - %r', path)
+                self.app.logger.info('entry no longer exists, '
+                                     'removing - %r', path)
                 del self[path]
 
         self.reload_finish_event.set()
 
     @staticmethod
-    def date_condition(attribute, value):
-        return lambda entry: getattr(entry.datetime_written, attribute) == value
+    def date_condition(attr, value):
+        return lambda entry: getattr(entry.datetime_written, attr) == value
 
     def filter(self, *conditions):
         if not self.show_hidden:
@@ -154,6 +176,7 @@ class Archive(dict):
             if all(condition(entry) for condition in conditions):
                 yield entry
 
+@app.route('/')
 @app.route('/archive')
 @app.route('/tag/<tag_slug>')
 @app.route('/<int:year>')
@@ -192,7 +215,8 @@ def entry(title_slug, **kwargs):
 
     conditions = (app.archive.date_condition(attribute, kwargs[attribute])
                   for attribute in ['year', 'month', 'day'])
-    entries = app.archive.filter(*conditions, lambda entry: entry.title_slug == title_slug)
+    title_condition = lambda entry: entry.title_slug == title_slug
+    entries = app.archive.filter(*conditions, title_condition)
     try:
         entry = next(entries)
     except StopIteration:
@@ -204,7 +228,8 @@ def robots():
     return flask.send_from_directory(app.static_folder, 'robots.txt')
 
 def render_error_template(code, name, image):
-    return flask.render_template('error.html', title='{} {}'.format(code, name), image=image), code
+    return flask.render_template('error.html', image=image,
+                                 title='{} {}'.format(code, name)), code
 
 @app.errorhandler(404)
 def error_404(error):
@@ -214,7 +239,8 @@ def error_403(error):
     return render_error_template(403, 'Forbidden', '/static/403.jpg')
 @app.errorhandler(500)
 def error_500(error):
-    return render_error_template(500, 'Internal Server Error', '/static/500.jpg')
+    return render_error_template(500, 'Internal Server Error',
+                                 '/static/500.jpg')
 
 @click.command()
 @click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
@@ -224,17 +250,22 @@ def error_500(error):
 @click.option('--debug', is_flag=True, show_default=True)
 @click.option('--show-hidden', is_flag=True, show_default=True)
 @click.option('--reload-interval', type=int, default=300, show_default=True)
-def main(archive_path, host, port, debug, show_hidden, reload_interval):
+@click.option('--restrict-tags', envvar='BLOG_RESTRICT_TAGS', default='')
+def main(archive_path, host, port, debug,
+         show_hidden, reload_interval, restrict_tags):
     if archive_path is None:
         raise click.BadParameter("either '--archive-path' must be provided "
-                                 "or the 'BLOG_ARCHIVE_PATH' environment variable must be set")
+                                 "or the 'BLOG_ARCHIVE_PATH' environment "
+                                 'variable must be set')
 
+    formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter('[%(asctime)s %(levelname)s] %(message)s'))
+    handler.setFormatter(formatter)
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-    app.archive = Archive(app, archive_path, show_hidden, reload_interval)
+    app.archive = Archive(app, archive_path, show_hidden,
+                          reload_interval, set(restrict_tags.split(';')))
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
     app.run(host=host, port=port, debug=debug)
 
