@@ -1,3 +1,3 @@
-from ._muhblog import main
+from muhblog import main
 
 main()
