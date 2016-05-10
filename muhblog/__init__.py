@@ -5,16 +5,20 @@ from datetime import datetime
 import click
 import flask
 import markdown
+import flask.ext.frozen
 import markdown.extensions.meta
 from slugify import slugify
 
 app = flask.Flask(__name__)
+app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
 formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
+
+freezer = flask.ext.frozen.Freezer(app)
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, match):
@@ -138,20 +142,24 @@ def error_403_view(error):
 def error_500_view(error):
     return render_error_template(500, 'Internal Server Error', '500.jpg')
 
-path_option = click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
-                           type=click.Path(file_okay=False, writable=True))
-
-@click.command()
-@path_option
-@click.option('--host')
-@click.option('--port', type=int, default=9001, show_default=True)
-@click.option('--debug', is_flag=True)
-def main(archive_path, host, port, debug):
+@click.group()
+@click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
+              type=click.Path(file_okay=False, writable=True))
+def main(archive_path):
     if archive_path is None:
         raise click.BadParameter("either '--archive-path' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment "
                                  'variable must be set')
-
-    app.logger.setLevel('DEBUG' if debug else 'INFO')
     app.archive = Archive(pathlib.Path(archive_path))
+
+@main.command()
+def freeze():
+    freezer.freeze()
+
+@main.command()
+@click.option('--host')
+@click.option('--port', type=int, default=9001, show_default=True)
+@click.option('--debug', is_flag=True)
+def run(host, port, debug):
+    app.logger.setLevel('DEBUG' if debug else 'INFO')
     app.run(host=host, port=port, debug=debug)
