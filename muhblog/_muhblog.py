@@ -1,4 +1,3 @@
-import re
 import time
 import logging
 import pathlib
@@ -7,37 +6,11 @@ from datetime import datetime
 
 import click
 import flask
-import slugify
 import markdown
 import markdown.extensions.meta
-
-DATE_FORMAT = '%Y-%m-%d %H:%M'
-MAX_TITLE_LENGTH = 100
+from slugify import slugify
 
 app = flask.Flask(__name__)
-
-class HiddenTagPattern(markdown.postprocessors.Postprocessor):
-    regex = re.compile(r'\[hidden(?: (.+?))?\](.+?)\[/hidden\]', re.DOTALL)
-
-    def __init__(self, show_hidden, *args, **kwargs):
-        self.show_hidden = show_hidden
-        super().__init__(*args, **kwargs)
-
-    def replacer(self, match):
-        replacement, text = match.groups()
-        return text if self.show_hidden else (replacement or '')
-
-    def run(self, text):
-        return self.regex.sub(self.replacer, text)
-
-class HiddenTagExtension(markdown.Extension):
-    def __init__(self, show_hidden, **kwargs):
-        self.show_hidden = show_hidden
-        super().__init__(**kwargs)
-
-    def extendMarkdown(self, md, md_globals):
-        md.postprocessors[type(self).__name__] \
-            = HiddenTagPattern(self.show_hidden)
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, match):
@@ -54,9 +27,6 @@ class SpoilerTagExtension(markdown.Extension):
             = SpoilerTagPattern(self.regex_pattern, md)
 
 class Entry:
-    formatting_regex = re.compile(r'\[([a-z]+)(?: (.+?))?\](.+?)\[/([a-z]+)\]',
-                                  re.DOTALL)
-
     def __init__(self, archive, path):
         self.archive = archive
         self.path = path
@@ -72,19 +42,9 @@ class Entry:
         except (AttributeError, TypeError):
             return NotImplemented
 
-    @staticmethod
-    def string_to_boolean(string):
-        string = string.lower()
-        if string in {'true', 'yes', 'aye', '1'}:
-            return True
-        if string in {'false', 'no', 'naw', '0'}:
-            return False
-        raise ValueError(string)
-
     def reload(self):
         self.parser = markdown.Markdown(
             extensions=[markdown.extensions.meta.MetaExtension(),
-                        HiddenTagExtension(self.archive.show_hidden),
                         SpoilerTagExtension()]
         )
 
@@ -92,29 +52,18 @@ class Entry:
             self.parser.convert(self.path.read_text(encoding='utf-8'))
         )
         self.title = self.parser.Meta['title'][0]
-        self.title_slug = slugify.slugify(self.title, max_length=100)
+        self.title_slug = slugify(self.title, max_length=100)
         self.datetime_written = datetime.strptime(self.parser.Meta['date'][0],
-                                                  DATE_FORMAT)
+                                                  '%Y-%m-%d %H:%M')
         self.timestamp_modified = self.path.stat().st_mtime
-        self.tags = {tag: slugify.slugify(tag)
-                     for tag in self.parser.Meta['tags']}
-        if any(tag in self.tags for tag in self.archive.restrict_tags):
-            if 'is_hidden' in self.parser.Meta:
-                is_hidden_string = self.parser.Meta['is_hidden'][0]
-                self.is_hidden = self.string_to_boolean(is_hidden_string)
-            else:
-                self.is_hidden = True
-        else:
-            self.is_hidden = True
+        self.tags = {tag: slugify(tag) for tag in self.parser.Meta['tags']}
 
 class Archive(dict):
-    def __init__(self, app, path, show_hidden, reload_interval, restrict_tags):
+    def __init__(self, app, path, reload_interval):
         super().__init__()
         self.app = app
         self.path = pathlib.Path(path)
-        self.show_hidden = show_hidden
         self.reload_interval = reload_interval
-        self.restrict_tags = restrict_tags
 
         self.reload_finish_event = threading.Event()
         self.reload_finish_event.set()
@@ -170,14 +119,11 @@ class Archive(dict):
         return lambda entry: getattr(entry.datetime_written, attr) == value
 
     def filter(self, *conditions):
-        if not self.show_hidden:
-            conditions = [lambda entry: not entry.is_hidden, *conditions]
         for entry in self.values():
             if all(condition(entry) for condition in conditions):
                 yield entry
 
 @app.route('/')
-@app.route('/archive')
 @app.route('/tag/<tag_slug>')
 @app.route('/<int:year>')
 @app.route('/<int:year>/<int:month>')
@@ -247,12 +193,9 @@ def error_500(error):
               type=click.Path(file_okay=False, writable=True))
 @click.option('--host')
 @click.option('--port', type=int, default=9001, show_default=True)
-@click.option('--debug', is_flag=True, show_default=True)
-@click.option('--show-hidden', is_flag=True, show_default=True)
+@click.option('--debug', is_flag=True)
 @click.option('--reload-interval', type=int, default=300, show_default=True)
-@click.option('--restrict-tags', envvar='BLOG_RESTRICT_TAGS', default='')
-def main(archive_path, host, port, debug,
-         show_hidden, reload_interval, restrict_tags):
+def main(archive_path, host, port, debug, reload_interval):
     if archive_path is None:
         raise click.BadParameter("either '--archive-path' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment "
@@ -264,8 +207,7 @@ def main(archive_path, host, port, debug,
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-    app.archive = Archive(app, archive_path, show_hidden,
-                          reload_interval, set(restrict_tags.split(';')))
+    app.archive = Archive(app, archive_path, reload_interval)
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
     app.run(host=host, port=port, debug=debug)
 

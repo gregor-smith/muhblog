@@ -8,11 +8,8 @@
     </head>
     <body>
         <nav>
-            <a href="/">{{ BLOG_TITLE }}</a>
-            <ul>
-                <li><a href="/archive">Archive</a></li>
-                <li><a href="/about"/>About</a></li>
-            </ul>
+            <a href="/" class="blog_title">{{ BLOG_TITLE }}</a>
+            <a href="/about"/ class="about">About</a>
         </nav>
         <div class="content">
         {% block content %}{% endblock %}

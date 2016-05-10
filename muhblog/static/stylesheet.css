@@ -10,19 +10,12 @@ nav {
     height: 25px;
 }
 
-nav > a {
+nav .blog_title {
     float: left;
 }
 
-nav ul {
+nav .about {
     float: right;
-    margin: 0;
-    padding: 0;
-}
-
-nav ul li {
-    display: inline;
-    margin: 5px;
 }
 
 .content {
