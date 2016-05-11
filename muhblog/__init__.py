@@ -11,6 +11,7 @@ from slugify import slugify
 
 app = flask.Flask(__name__)
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
+app.config['FREEZER_DESTINATION'] = str(pathlib.Path('freeze').absolute())
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
 formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
@@ -127,20 +128,6 @@ def entry_view(title_slug, **kwargs):
 def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
-
-def render_error_template(code, name, image):
-    return flask.render_template('error.html', image=image,
-                                 title='{} {}'.format(code, name)), code
-
-@app.errorhandler(404)
-def error_404_view(error):
-    return render_error_template(404, 'Not Found', '404.png')
-@app.errorhandler(403)
-def error_403_view(error):
-    return render_error_template(403, 'Forbidden', '403.jpg')
-@app.errorhandler(500)
-def error_500_view(error):
-    return render_error_template(500, 'Internal Server Error', '500.jpg')
 
 @click.group()
 @click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
