@@ -1,4 +1,3 @@
-import logging
 import pathlib
 from datetime import datetime
 
@@ -13,11 +12,6 @@ app = flask.Flask(__name__)
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 app.config['FREEZER_DESTINATION'] = str(pathlib.Path('freeze').absolute())
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
-
-formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-app.logger.addHandler(handler)
 
 freezer = flask.ext.frozen.Freezer(app)
 
@@ -35,23 +29,23 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
+markdown_parser = markdown.Markdown(
+    extensions=[markdown.extensions.meta.MetaExtension(),
+                SpoilerTagExtension()]
+)
+
 class Entry:
     def __init__(self, path):
         self.path = path
 
-        parser = markdown.Markdown(
-            extensions=[markdown.extensions.meta.MetaExtension(),
-                        SpoilerTagExtension()]
-        )
-
         self.text = flask.Markup(
-            parser.convert(self.path.read_text(encoding='utf-8'))
+            markdown_parser.convert(self.path.read_text(encoding='utf-8'))
         )
-        self.title = parser.Meta['title'][0]
+        self.title = markdown_parser.Meta['title'][0]
         self.title_slug = slugify(self.title, max_length=100)
-        self.date_written = datetime.strptime(parser.Meta['date'][0],
-                                                  '%Y-%m-%d %H:%M')
-        self.tags = {tag: slugify(tag) for tag in parser.Meta['tags']}
+        self.date_written = datetime.strptime(markdown_parser.Meta['date'][0],
+                                              '%Y-%m-%d %H:%M')
+        self.tags = {slugify(tag): tag for tag in markdown_parser.Meta['tags']}
 
     def __repr__(self):
         return '{}(path={!r})'.format(type(self).__name__, self.path)
@@ -66,42 +60,43 @@ class Archive(dict):
     def __init__(self, path):
         super().__init__()
         self.path = path
+        self.tags = {}
 
         for path in self.path.glob('*.md'):
             if path.is_file():
-                self[path] = Entry(path)
+                self[path] = entry = Entry(path)
+                self.tags.update(entry.tags)
 
     __repr__ = Entry.__repr__
-
-    @staticmethod
-    def date_condition(attr, value):
-        return lambda entry: getattr(entry.date_written, attr) == value
 
     def filter(self, *conditions):
         for entry in self.values():
             if all(condition(entry) for condition in conditions):
                 yield entry
 
+def date_condition(attr, value):
+    return lambda entry: getattr(entry.date_written, attr) == value
+
 @app.route('/')
 @app.route('/tag/<tag_slug>/')
-@app.route('/<int:year>/')
-@app.route('/<int:year>/<int:month>/')
-@app.route('/<int:year>/<int:month>/<int:day>/')
+@app.route('/<year>/')
+@app.route('/<year>/<month>/')
+@app.route('/<year>/<month>/<day>/')
 def archive_view(tag_slug=None, year=None, month=None, day=None):
     conditions = []
     if year is not None:
-        title_parts = [str(year)]
-        conditions.append(app.archive.date_condition('year', year))
+        title_parts = [year]
+        conditions.append(date_condition('year', int(year)))
         if month is not None:
-            title_parts.append('{:0>2}'.format(month))
-            conditions.append(app.archive.date_condition('month', month))
+            title_parts.append(month)
+            conditions.append(date_condition('month', int(month)))
             if day is not None:
-                title_parts.append('{:0>2}'.format(day))
-                conditions.append(app.archive.date_condition('day', day))
+                title_parts.append(day)
+                conditions.append(date_condition('day', int(day)))
         title = '/'.join(reversed(title_parts))
     elif tag_slug is not None:
-        title = tag_slug
-        conditions.append(lambda entry: tag_slug in entry.tags.values())
+        title = app.archive.tags[tag_slug]
+        conditions.append(lambda entry: tag_slug in entry.tags)
     else:
         title = 'Archive'
 
@@ -112,9 +107,9 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
 
     return flask.render_template('archive.html', title=title, entries=entries)
 
-@app.route('/<int:year>/<int:month>/<int:day>/<title_slug>/')
+@app.route('/<year>/<month>/<day>/<title_slug>/')
 def entry_view(title_slug, **kwargs):
-    conditions = (app.archive.date_condition(attribute, kwargs[attribute])
+    conditions = (date_condition(attribute, int(kwargs[attribute]))
                   for attribute in ['year', 'month', 'day'])
     title_condition = lambda entry: entry.title_slug == title_slug
     entries = app.archive.filter(*conditions, title_condition)
@@ -124,29 +119,25 @@ def entry_view(title_slug, **kwargs):
         flask.abort(404)
     return flask.render_template('entry.html', title=entry.title, entry=entry)
 
+@app.route('/about/')
+def about_view():
+    return flask.render_template('about.html', title='About')
+
 @app.route('/robots.txt')
 def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
-@click.group()
+@click.command()
 @click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
               type=click.Path(file_okay=False, writable=True))
-def main(archive_path):
+@click.option('--host')
+@click.option('--port', type=int, default=9001, show_default=True)
+@click.option('--debug', is_flag=True)
+def main(archive_path, **kwargs):
     if archive_path is None:
         raise click.BadParameter("either '--archive-path' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment "
                                  'variable must be set')
     app.archive = Archive(pathlib.Path(archive_path))
-
-@main.command()
-def freeze():
-    freezer.freeze()
-
-@main.command()
-@click.option('--host')
-@click.option('--port', type=int, default=9001, show_default=True)
-@click.option('--debug', is_flag=True)
-def run(host, port, debug):
-    app.logger.setLevel('DEBUG' if debug else 'INFO')
-    app.run(host=host, port=port, debug=debug)
+    freezer.run(**kwargs)

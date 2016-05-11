@@ -8,8 +8,8 @@
     </head>
     <body>
         <nav>
-            <a href="{{ url_for('archive_view') }}" class="blog_title">{{ BLOG_TITLE }}</a>
-            <a href="/about"/ class="about">About</a>
+            <a href="{{ url_for('archive_view') }}" class="blog_title_link">{{ BLOG_TITLE }}</a>
+            <a href="{{ url_for('about_view') }}"/ class="about_link">About</a>
         </nav>
         <div class="content">
         {% block content %}{% endblock %}

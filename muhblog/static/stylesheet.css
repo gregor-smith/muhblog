@@ -12,11 +12,11 @@ nav {
     height: 25px;
 }
 
-nav .blog_title {
+nav .blog_title_link {
     float: left;
 }
 
-nav .about {
+nav .about_link {
     float: right;
 }
 
@@ -47,14 +47,6 @@ h1, h2, h3 {
     font-style: italic;
     display: inline;
     margin: 5px;
-}
-
-.error {
-    text-align: center;
-}
-
-.error img {
-    max-height: 400px;
 }
 
 .spoiler {
