@@ -12,11 +12,11 @@ nav {
     height: 25px;
 }
 
-nav .blog_title_link {
+.blog_title_link {
     float: left;
 }
 
-nav .about_link {
+.about_link {
     float: right;
 }
 
@@ -44,6 +44,7 @@ h1, h2, h3 {
 }
 
 .tags li {
+    font-size: 16px;
     font-style: italic;
     display: inline;
     margin: 5px;
@@ -56,4 +57,12 @@ h1, h2, h3 {
 
 .spoiler:hover {
     color: white;
+}
+
+.archive_list {
+    font-size: 14px;
+}
+
+.entry_links {
+    font-size: 18px;
 }
