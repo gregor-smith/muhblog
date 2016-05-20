@@ -4,7 +4,7 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>{{ title }} | {{ BLOG_TITLE }}</title>
+        <title>{{ BLOG_TITLE if title is none else '{} | {}'.format(title, BLOG_TITLE) }}</title>
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}"/>
     </head>

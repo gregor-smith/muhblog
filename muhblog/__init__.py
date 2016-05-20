@@ -98,7 +98,7 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
         title = app.archive.tags[tag_slug]
         conditions.append(lambda entry: tag_slug in entry.tags)
     else:
-        title = 'Archive'
+        title = None
 
     entries = list(app.archive.filter(*conditions))
     if not entries:
@@ -111,8 +111,8 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
 def entry_view(title_slug, **kwargs):
     conditions = (date_condition(attribute, int(kwargs[attribute]))
                   for attribute in ['year', 'month', 'day'])
-    title_condition = lambda entry: entry.title_slug == title_slug
-    entries = app.archive.filter(*conditions, title_condition)
+    entries = app.archive.filter(*conditions,
+                                 lambda entry: entry.title_slug == title_slug)
     try:
         entry = next(entries)
     except StopIteration:
