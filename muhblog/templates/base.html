@@ -1,5 +1,6 @@
-<!DOCTYPE html>
 {% set BLOG_TITLE = "blog was self made" %}
+
+<!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
@@ -10,7 +11,7 @@
     <body>
         <nav>
             <a href="{{ url_for('archive_view') }}" class="blog_title_link">{{ BLOG_TITLE }}</a>
-            <a href="{{ url_for('about_view') }}"/ class="about_link">About</a>
+            <a href="{{ url_for('about_view') }}" class="about_link">About</a>
         </nav>
         <div class="content">
         {% block content %}{% endblock %}

@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1 class="title">{{ entry.title }}</h1>
-    <p class="date">{{ '{:%d/%m/%Y %T}'.format(entry.date_written) }}</p>
-    <ul class="tags">
-    {% for slug, tag in entry.tags | dictsort(by='value') %}
-        <li><a href="{{ url_for('archive_view', tag_slug=slug) }}">{{ tag }}</a></li>
-    {% endfor %}
-    </ul>
+    <header>
+        <h1>{{ entry.title }}</h1>
+        <time class="date" datetime="{{ entry.date_written }}">
+            {{ '{:%d/%m/%Y %T}'.format(entry.date_written) }}
+        </time>
+        <ul class="tags">
+        {% for slug, tag in entry.tags | dictsort(by='value') %}
+            <li><a href="{{ url_for('archive_view', tag_slug=slug) }}">{{ tag }}</a></li>
+        {% endfor %}
+        </ul>
+    </header>
     {{ entry.text }}
 {% endblock %}
