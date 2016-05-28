@@ -1,6 +1,9 @@
 import os
-import pathlib
+import shutil
+import functools
 import subprocess
+import urllib.parse
+from pathlib import Path
 from datetime import datetime
 
 import click
@@ -11,8 +14,9 @@ import markdown.extensions.meta
 from slugify import slugify
 
 app = flask.Flask(__name__)
-app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
-app.config['FREEZER_DESTINATION'] = str(pathlib.Path('freeze').absolute())
+app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', 'static/*']
+app.config['FREEZER_DESTINATION'] = \
+    str(Path(click.get_app_dir('muhblog'), 'freeze'))
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
 freezer = flask.ext.frozen.Freezer(app)
@@ -138,23 +142,56 @@ def main(archive_path):
         raise click.BadParameter("either '--archive-path' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment "
                                  'variable must be set')
-    app.archive = Archive(pathlib.Path(archive_path))
+    app.archive = Archive(Path(archive_path))
 
 @main.command()
 def freeze():
     freezer.freeze()
 
-@main.command()
-def upload():
+def push_frozen_git(silent=False):
+    if silent:
+        kwargs = {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE}
+    else:
+        kwargs = {}
+    run_subprocess = functools.partial(subprocess.run, **kwargs)
+
     cwd = os.getcwd()
     try:
         os.chdir(app.config['FREEZER_DESTINATION'])
-        subprocess.run(['git', 'add', '*'])
-        subprocess.run(['git', 'commit', '-a', '-m',
+        run_subprocess(['git', 'add', '*'])
+        run_subprocess(['git', 'commit', '-a', '-m',
                         'automated commit at {:%c}'.format(datetime.now())])
-        subprocess.run(['git', 'push'])
+        run_subprocess(['git', 'push'])
     finally:
         os.chdir(cwd)
+
+@main.command()
+def push():
+    push_frozen_git()
+
+@main.command()
+@click.argument('path', type=click.Path(exists=True, dir_okay=False))
+@click.option('--url', envvar='BLOG_URL')
+@click.option('--push', is_flag=True)
+@click.option('--overwrite', is_flag=True)
+@click.option('--rename', is_flag=True)
+def upload(path, url, push, overwrite, rename):
+    path = Path(path)
+    static = Path(app.config['FREEZER_DESTINATION'], 'static')
+
+    if rename:
+        name = str(datetime.now().timestamp()) + path.suffix
+    else:
+        name = path.name
+    destination = static.joinpath(name)
+    if destination.exists() and not overwrite:
+        raise SystemExit('path already exists: {}'.format(destination))
+    shutil.copy2(str(path), str(destination))
+
+    if push:
+        push_frozen_git(silent=True)
+    if url is not None:
+        print(urllib.parse.urljoin(url, 'static/'+name))
 
 @main.command()
 @click.option('--freeze', is_flag=True)
