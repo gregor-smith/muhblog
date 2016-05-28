@@ -1,4 +1,6 @@
+import os
 import pathlib
+import subprocess
 from datetime import datetime
 
 import click
@@ -128,16 +130,36 @@ def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
-@click.command()
+@click.group()
 @click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
               type=click.Path(file_okay=False, writable=True))
-@click.option('--host')
-@click.option('--port', type=int, default=9001, show_default=True)
-@click.option('--debug', is_flag=True)
-def main(archive_path, **kwargs):
+def main(archive_path):
     if archive_path is None:
         raise click.BadParameter("either '--archive-path' must be provided "
                                  "or the 'BLOG_ARCHIVE_PATH' environment "
                                  'variable must be set')
     app.archive = Archive(pathlib.Path(archive_path))
-    freezer.run(**kwargs)
+
+@main.command()
+def freeze():
+    freezer.freeze()
+
+@main.command()
+def upload():
+    cwd = os.getcwd()
+    try:
+        os.chdir(app.config['FREEZER_DESTINATION'])
+        subprocess.run(['git', 'add', '*'])
+        subprocess.run(['git', 'commit', '-a', '-m',
+                        'automated commit at {:%c}'.format(datetime.now())])
+        subprocess.run(['git', 'push'])
+    finally:
+        os.chdir(cwd)
+
+@main.command()
+@click.option('--freeze', is_flag=True)
+@click.option('--host')
+@click.option('--port', type=int, default=9001, show_default=True)
+@click.option('--debug', is_flag=True)
+def run(freeze, **kwargs):
+    (freezer if freeze else app).run(**kwargs)
