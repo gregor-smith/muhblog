@@ -13,15 +13,15 @@
     </head>
     <body>
         <nav>
-            <a href="{{ url_for('archive_view') }}" class="title_link">
-                {{ BLOG_TITLE }}
-            </a>
-            <ul class="other_links">
+            <ul>
                 <li>
-                    <a href="{{ url_for('uploads_view') }}">Uploads</a>
+                    <a href="{{ url_for('archive_view') }}">{{ BLOG_TITLE }}</a>
                 </li>
                 <li>
                     <a href="{{ url_for('about_view') }}">About</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('uploads_view') }}">Uploads</a>
                 </li>
             </ul>
         </nav>
