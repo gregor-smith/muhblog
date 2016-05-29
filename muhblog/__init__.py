@@ -9,22 +9,24 @@ from datetime import datetime
 import click
 import flask
 import markdown
-import flask.ext.frozen
+import flask_frozen
 import markdown.extensions.meta
 from slugify import slugify
 
 WINDOWS = os.name == 'nt'
 
-APP_DIRECTORY = Path(click.get_app_dir('muhblog'))
-FREEZE_DIRECTORY = APP_DIRECTORY.joinpath('freeze')
-UPLOADS_DIRECTORY = APP_DIRECTORY.joinpath('uploads')
+APP_DIR = Path(click.get_app_dir('muhblog'))
 
 app = flask.Flask(__name__)
+app.config['BLOG_URL'] = None
+app.config['BLOG_APP_DIRECTORY'] = str(APP_DIR)
+app.config['BLOG_ARCHIVE_DIRECTORY'] = str(APP_DIR.joinpath('archive'))
+app.config['BLOG_UPLOADS_DIRECTORY'] = str(APP_DIR.joinpath('uploads'))
+app.config['FREEZER_DESTINATION'] = str(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
-app.config['FREEZER_DESTINATION'] = str(FREEZE_DIRECTORY)
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
-freezer = flask.ext.frozen.Freezer(app)
+freezer = flask_frozen.Freezer(app)
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, match):
@@ -40,27 +42,22 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
-markdown_parser = markdown.Markdown(
-    extensions=[markdown.extensions.meta.MetaExtension(),
-                SpoilerTagExtension()]
-)
-
-def format_datetime(dt=None):
-    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
-app.jinja_env.filters['format_datetime'] = format_datetime
-
 class Entry:
     def __init__(self, path):
         self.path = path
+        self.parser = markdown.Markdown(
+            extensions=[markdown.extensions.meta.MetaExtension(),
+                        SpoilerTagExtension()]
+        )
 
         self.text = flask.Markup(
-            markdown_parser.convert(self.path.read_text(encoding='utf-8'))
+            self.parser.convert(self.path.read_text(encoding='utf-8'))
         )
-        self.title = markdown_parser.Meta['title'][0]
+        self.title = self.parser.Meta['title'][0]
         self.title_slug = slugify(self.title, max_length=100)
-        self.date_written = datetime.strptime(markdown_parser.Meta['date'][0],
+        self.date_written = datetime.strptime(self.parser.Meta['date'][0],
                                               '%Y-%m-%d %H:%M')
-        self.tags = {slugify(tag): tag for tag in markdown_parser.Meta['tags']}
+        self.tags = {slugify(tag): tag for tag in self.parser.Meta['tags']}
 
     def __repr__(self):
         return '{}(path={!r})'.format(type(self).__name__, self.path)
@@ -72,22 +69,26 @@ class Entry:
             return NotImplemented
 
 class Archive(dict):
-    def __init__(self, path):
+    def __init__(self, app):
         super().__init__()
-        self.path = path
+        self.app = app
         self.tags = {}
 
-        for path in self.path.glob('*.md'):
+    __repr__ = Entry.__repr__
+
+    def reload(self):
+        archive_directory = Path(self.app.config['BLOG_ARCHIVE_DIRECTORY'])
+        for path in archive_directory.glob('*.md'):
             if path.is_file():
                 self[path] = entry = Entry(path)
                 self.tags.update(entry.tags)
-
-    __repr__ = Entry.__repr__
 
     def filter(self, *conditions):
         for entry in self.values():
             if all(condition(entry) for condition in conditions):
                 yield entry
+
+archive = Archive(app)
 
 def date_condition(attr, value):
     return lambda entry: getattr(entry.date_written, attr) == value
@@ -110,12 +111,12 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
                 conditions.append(date_condition('day', int(day)))
         title = '/'.join(reversed(title_parts))
     elif tag_slug is not None:
-        title = app.archive.tags[tag_slug]
+        title = archive.tags[tag_slug]
         conditions.append(lambda entry: tag_slug in entry.tags)
     else:
         title = None
 
-    entries = list(app.archive.filter(*conditions))
+    entries = list(archive.filter(*conditions))
     if not entries:
         flask.abort(404)
     entries.sort(reverse=True)
@@ -126,7 +127,7 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
 def entry_view(title_slug, **kwargs):
     conditions = (date_condition(attribute, int(kwargs[attribute]))
                   for attribute in ['year', 'month', 'day'])
-    entries = app.archive.filter(*conditions,
+    entries = archive.filter(*conditions,
                                  lambda entry: entry.title_slug == title_slug)
     try:
         entry = next(entries)
@@ -143,24 +144,27 @@ def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
+def format_datetime(dt=None):
+    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
+app.jinja_env.filters['format_datetime'] = format_datetime
+
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
 def uploads_view(filename=None):
+    uploads_directory = app.config['BLOG_UPLOADS_DIRECTORY']
     if filename is not None:
-        return flask.send_from_directory(str(UPLOADS_DIRECTORY), filename)
+        return flask.send_from_directory(str(uploads_directory), filename)
     return flask.render_template('uploads.html', title='Uploads',
-                                 directory=UPLOADS_DIRECTORY,
-                                 datetime=datetime)
+                                 timestamp_parser=datetime.fromtimestamp,
+                                 directory=Path(uploads_directory))
 
 @click.group()
-@click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
-              type=click.Path(file_okay=False, writable=True))
-def main(archive_path):
-    if archive_path is None:
-        raise click.BadParameter("either '--archive-path' must be provided "
-                                 "or the 'BLOG_ARCHIVE_PATH' environment "
-                                 'variable must be set')
-    app.archive = Archive(Path(archive_path))
+@click.option('--config-path', envvar='BLOG_CONFIG_PATH',
+              default=str(APP_DIR.joinpath('config.json')),
+              type=click.Path(dir_okay=False, exists=True))
+def main(config_path):
+    app.config.from_json(config_path, silent=True)
+    archive.reload()
 
 @main.command()
 def freeze():
@@ -175,7 +179,7 @@ def push_frozen_git(silent=False):
 
     cwd = os.getcwd()
     try:
-        os.chdir(str(FREEZE_DIRECTORY))
+        os.chdir(app.config['FREEZER_DESTINATION'])
         run_subprocess(['git', 'add', '*'])
         run_subprocess(['git', 'commit', '-a', '-m',
                         'automated commit at {}'.format(format_datetime())])
@@ -189,7 +193,7 @@ def push():
 
 @main.command()
 @click.argument('path', type=click.Path(exists=True, dir_okay=False))
-@click.option('--url', envvar='BLOG_URL')
+@click.option('--url', default=lambda: app.config['BLOG_URL'])
 @click.option('--push', is_flag=True)
 @click.option('--overwrite', is_flag=True)
 @click.option('--rename', is_flag=True)
@@ -200,7 +204,7 @@ def upload(path, url, push, overwrite, rename, clipboard):
         name = str(datetime.now().timestamp()) + path.suffix
     else:
         name = path.name
-    destination = UPLOADS_DIRECTORY.joinpath(name)
+    destination = Path(app.config['BLOG_UPLOADS_DIRECTORY'], name)
     if destination.exists():
         if overwrite:
             destination.unlink()

@@ -18,7 +18,7 @@
                     </td>
                     {% set stat = path.stat() %}
                     <td>{{ stat.st_size | filesizeformat }}</td>
-                    {% set date_modified = datetime.fromtimestamp(stat.st_mtime) %}
+                    {% set date_modified = timestamp_parser(stat.st_mtime) %}
                     <td>
                         <time datetime="{{ date_modified }}">
                             {{ date_modified | format_datetime }}
