@@ -1,5 +1,6 @@
 import os
 import ctypes
+import shutil
 import functools
 import subprocess
 from pathlib import Path
@@ -11,6 +12,8 @@ import markdown
 import flask.ext.frozen
 import markdown.extensions.meta
 from slugify import slugify
+
+WINDOWS = os.name == 'nt'
 
 APP_DIRECTORY = Path(click.get_app_dir('muhblog'))
 FREEZE_DIRECTORY = APP_DIRECTORY.joinpath('freeze')
@@ -190,11 +193,9 @@ def push():
 @click.option('--push', is_flag=True)
 @click.option('--overwrite', is_flag=True)
 @click.option('--rename', is_flag=True)
-def upload(path, url, push, overwrite, rename):
-    if os.name == 'nt' and not ctypes.windll.shell32.IsUserAnAdmin():
-        raise click.UsageError('Administrative priviledges required.')
-
-    path = Path(path)
+@click.option('--clipboard', is_flag=True)
+def upload(path, url, push, overwrite, rename, clipboard):
+    path = Path(path).absolute()
     if rename:
         name = str(datetime.now().timestamp()) + path.suffix
     else:
@@ -205,13 +206,31 @@ def upload(path, url, push, overwrite, rename):
             destination.unlink()
         else:
             raise SystemExit('path already exists: {}'.format(destination))
-    destination.symlink_to(path)
+    if WINDOWS:
+        if ctypes.windll.shell32.IsUserAnAdmin():
+            destination.symlink_to(path)
+            print('symlink created:', destination)
+        elif path.drive == destination.drive:
+            subprocess.run(['mklink', '/H', str(destination), str(path)],
+                           shell=True, stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+            print('hardlink created:', destination)
+        else:
+            shutil.copy2(str(path), str(destination))
+            print('copy created:', destination)
+    else:
+        destination.symlink_to(path)
+        print('symlink created:', destination)
 
     if push:
         push_frozen_git(silent=True)
     if url is not None:
         with app.test_request_context():
-            print(url+flask.url_for('uploads_view', filename=name))
+            file_url = url + flask.url_for('uploads_view', filename=name)
+        print(file_url)
+        if clipboard:
+            subprocess.run(['clip' if WINDOWS else 'xclip'],
+                           input=file_url, universal_newlines=True)
 
 @main.command()
 @click.option('--freeze', is_flag=True)
