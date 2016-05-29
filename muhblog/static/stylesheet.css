@@ -12,8 +12,21 @@ nav {
     height: 25px;
 }
 
-.about_link {
+.title_link {
+    margin: 3px;
+    float: left;
+}
+
+.other_links {
     float: right;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.other_links li {
+    margin: 3px;
+    display: inline;
 }
 
 .content {

@@ -1,7 +1,6 @@
 import os
 import ctypes
 import shutil
-import functools
 import subprocess
 from pathlib import Path
 from datetime import datetime
@@ -128,7 +127,7 @@ def entry_view(title_slug, **kwargs):
     conditions = (date_condition(attribute, int(kwargs[attribute]))
                   for attribute in ['year', 'month', 'day'])
     entries = archive.filter(*conditions,
-                                 lambda entry: entry.title_slug == title_slug)
+                             lambda entry: entry.title_slug == title_slug)
     try:
         entry = next(entries)
     except StopIteration:
@@ -152,11 +151,12 @@ app.jinja_env.filters['format_datetime'] = format_datetime
 @app.route('/uploads/<path:filename>')
 def uploads_view(filename=None):
     uploads_directory = app.config['BLOG_UPLOADS_DIRECTORY']
-    if filename is not None:
-        return flask.send_from_directory(str(uploads_directory), filename)
-    return flask.render_template('uploads.html', title='Uploads',
-                                 timestamp_parser=datetime.fromtimestamp,
-                                 directory=Path(uploads_directory))
+    if filename is None:
+        return flask.render_template('uploads.html', title='Uploads',
+                                     timestamp_parser=datetime.fromtimestamp,
+                                     directory=Path(uploads_directory))
+    return flask.send_from_directory(str(uploads_directory), filename)
+    flask.send_file()
 
 @click.group()
 @click.option('--config-path', envvar='BLOG_CONFIG_PATH',
@@ -170,26 +170,21 @@ def main(config_path):
 def freeze():
     freezer.freeze()
 
-def push_frozen_git(silent=False):
-    if silent:
-        kwargs = {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE}
-    else:
-        kwargs = {}
-    run_subprocess = functools.partial(subprocess.run, **kwargs)
-
+def push_frozen_git(message=None):
     cwd = os.getcwd()
     try:
         os.chdir(app.config['FREEZER_DESTINATION'])
-        run_subprocess(['git', 'add', '*'])
-        run_subprocess(['git', 'commit', '-a', '-m',
-                        'automated commit at {}'.format(format_datetime())])
-        run_subprocess(['git', 'push'])
+        subprocess.run(['git', 'add', '*'])
+        subprocess.run(['git', 'commit', '-a', '-m', message])
+        subprocess.run(['git', 'push'])
     finally:
         os.chdir(cwd)
 
 @main.command()
-def push():
-    push_frozen_git()
+@click.option('-m', '--message',
+              default=lambda: 'push called at {}'.format(datetime.now()))
+def push(message):
+    push_frozen_git(message)
 
 @main.command()
 @click.argument('path', type=click.Path(exists=True, dir_okay=False))
@@ -227,7 +222,8 @@ def upload(path, url, push, overwrite, rename, clipboard):
         print('symlink created:', destination)
 
     if push:
-        push_frozen_git(silent=True)
+        freezer.freeze()
+        push_frozen_git('uploaded {} at {}'.format(name, datetime.now()))
     if url is not None:
         with app.test_request_context():
             file_url = url + flask.url_for('uploads_view', filename=name)

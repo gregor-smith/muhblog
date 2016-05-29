@@ -4,14 +4,26 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <title>{{ BLOG_TITLE if title is none else '{} | {}'.format(title, BLOG_TITLE) }}</title>
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='stylesheet.css') }}"/>
-        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}"/>
+        <title>{{ BLOG_TITLE if title is none else
+                  '{} | {}'.format(title, BLOG_TITLE) }}</title>
+        <link rel="stylesheet" type="text/css"
+         href="{{ url_for('static', filename='stylesheet.css') }}"/>
+        <link rel="icon" type="image/png"
+         href="{{ url_for('static', filename='favicon.png') }}"/>
     </head>
     <body>
         <nav>
-            <a href="{{ url_for('archive_view') }}" class="blog_title_link">{{ BLOG_TITLE }}</a>
-            <a href="{{ url_for('about_view') }}" class="about_link">About</a>
+            <a href="{{ url_for('archive_view') }}" class="title_link">
+                {{ BLOG_TITLE }}
+            </a>
+            <ul class="other_links">
+                <li>
+                    <a href="{{ url_for('uploads_view') }}">Uploads</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('about_view') }}">About</a>
+                </li>
+            </ul>
         </nav>
         <div class="content">
         {% block content %}{% endblock %}
