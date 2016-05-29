@@ -3,7 +3,7 @@
     <header>
         <h1>{{ entry.title }}</h1>
         <time class="date" datetime="{{ entry.date_written }}">
-            {{ '{:%d/%m/%Y %T}'.format(entry.date_written) }}
+            {{ entry.date_written | format_datetime }}
         </time>
         <ul class="tags">
         {% for slug, tag in entry.tags | dictsort(by='value') %}

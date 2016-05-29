@@ -12,10 +12,6 @@ nav {
     height: 25px;
 }
 
-.blog_title_link {
-    float: left;
-}
-
 .about_link {
     float: right;
 }
@@ -65,4 +61,17 @@ h1, h2, h3 {
 
 .entry_links {
     font-size: 18px;
+}
+
+.uploads_table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.uploads_table thead {
+    text-align: left;
+}
+
+.uploads_table tr {
+    border-bottom: 1px solid #ccc;
 }

@@ -1,8 +1,7 @@
 import os
-import shutil
+import ctypes
 import functools
 import subprocess
-import urllib.parse
 from pathlib import Path
 from datetime import datetime
 
@@ -13,10 +12,13 @@ import flask.ext.frozen
 import markdown.extensions.meta
 from slugify import slugify
 
+APP_DIRECTORY = Path(click.get_app_dir('muhblog'))
+FREEZE_DIRECTORY = APP_DIRECTORY.joinpath('freeze')
+UPLOADS_DIRECTORY = APP_DIRECTORY.joinpath('uploads')
+
 app = flask.Flask(__name__)
-app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', 'static/*']
-app.config['FREEZER_DESTINATION'] = \
-    str(Path(click.get_app_dir('muhblog'), 'freeze'))
+app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
+app.config['FREEZER_DESTINATION'] = str(FREEZE_DIRECTORY)
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
 freezer = flask.ext.frozen.Freezer(app)
@@ -39,6 +41,10 @@ markdown_parser = markdown.Markdown(
     extensions=[markdown.extensions.meta.MetaExtension(),
                 SpoilerTagExtension()]
 )
+
+def format_datetime(dt=None):
+    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
+app.jinja_env.filters['format_datetime'] = format_datetime
 
 class Entry:
     def __init__(self, path):
@@ -134,6 +140,15 @@ def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
+@app.route('/uploads/')
+@app.route('/uploads/<path:filename>')
+def uploads_view(filename=None):
+    if filename is not None:
+        return flask.send_from_directory(str(UPLOADS_DIRECTORY), filename)
+    return flask.render_template('uploads.html', title='Uploads',
+                                 directory=UPLOADS_DIRECTORY,
+                                 datetime=datetime)
+
 @click.group()
 @click.option('--archive-path', envvar='BLOG_ARCHIVE_PATH',
               type=click.Path(file_okay=False, writable=True))
@@ -157,10 +172,10 @@ def push_frozen_git(silent=False):
 
     cwd = os.getcwd()
     try:
-        os.chdir(app.config['FREEZER_DESTINATION'])
+        os.chdir(str(FREEZE_DIRECTORY))
         run_subprocess(['git', 'add', '*'])
         run_subprocess(['git', 'commit', '-a', '-m',
-                        'automated commit at {:%c}'.format(datetime.now())])
+                        'automated commit at {}'.format(format_datetime())])
         run_subprocess(['git', 'push'])
     finally:
         os.chdir(cwd)
@@ -176,22 +191,27 @@ def push():
 @click.option('--overwrite', is_flag=True)
 @click.option('--rename', is_flag=True)
 def upload(path, url, push, overwrite, rename):
-    path = Path(path)
-    static = Path(app.config['FREEZER_DESTINATION'], 'static')
+    if os.name == 'nt' and not ctypes.windll.shell32.IsUserAnAdmin():
+        raise click.UsageError('Administrative priviledges required.')
 
+    path = Path(path)
     if rename:
         name = str(datetime.now().timestamp()) + path.suffix
     else:
         name = path.name
-    destination = static.joinpath(name)
-    if destination.exists() and not overwrite:
-        raise SystemExit('path already exists: {}'.format(destination))
-    shutil.copy2(str(path), str(destination))
+    destination = UPLOADS_DIRECTORY.joinpath(name)
+    if destination.exists():
+        if overwrite:
+            destination.unlink()
+        else:
+            raise SystemExit('path already exists: {}'.format(destination))
+    destination.symlink_to(path)
 
     if push:
         push_frozen_git(silent=True)
     if url is not None:
-        print(urllib.parse.urljoin(url, 'static/'+name))
+        with app.test_request_context():
+            print(url+flask.url_for('uploads_view', filename=name))
 
 @main.command()
 @click.option('--freeze', is_flag=True)
