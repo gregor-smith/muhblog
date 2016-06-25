@@ -9,14 +9,13 @@
             </tr>
         </thead>
         <tbody>
-            {% for path in directory.iterdir() %}
+            {% for path, stat in files %}
                 <tr>
                     <td>
                         <a href="{{ url_for('uploads_view', filename=path.name) }}">
                             {{ path.name }}
                         </a>
                     </td>
-                    {% set stat = path.stat() %}
                     <td>{{ stat.st_size | filesizeformat }}</td>
                     {% set date_modified = timestamp_parser(stat.st_mtime) %}
                     <td>

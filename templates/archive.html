@@ -42,7 +42,9 @@
                     </li>
                 {% endif %}
                 <li>
-                    <a href="{{ url_for('archive_view', year=year) }}">{{ year }}</a>
+                    <a href="{{ url_for('archive_view', year=year) }}">
+                        {{ year }}
+                    </a>
                 {{ month_lines(entry, year, month_str) }}
                     {{ day_lines(entry, year, month_str, day_str) }}
                 {% set last_year = year %}

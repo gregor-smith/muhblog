@@ -42,11 +42,7 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
-class NiceRepr:
-    def __repr__(self):
-        return '{}(path={!r})'.format(type(self).__name__, self.path)
-
-class Entry(NiceRepr):
+class Entry:
     def __init__(self, path):
         self.path = path
         self.parser = markdown.Markdown(
@@ -69,7 +65,10 @@ class Entry(NiceRepr):
         except (AttributeError, TypeError):
             return NotImplemented
 
-class Archive(NiceRepr, dict):
+    def __repr__(self):
+        return '{}(path={!r})'.format(type(self).__name__, self.path)
+
+class Archive(dict):
     def __init__(self, app):
         super().__init__()
         self.app = app
@@ -152,9 +151,12 @@ app.jinja_env.filters['format_datetime'] = format_datetime
 def uploads_view(filename=None):
     uploads_directory = app.config['BLOG_UPLOADS_DIRECTORY']
     if filename is None:
+        files = sorted(((path, path.stat()) for path in
+                        Path(uploads_directory).iterdir() if path.is_file()),
+                       key=lambda tup: tup[1].st_mtime, reverse=True)
         return flask.render_template('uploads.html', title='Uploads',
                                      timestamp_parser=datetime.fromtimestamp,
-                                     directory=Path(uploads_directory))
+                                     files=files)
     return flask.send_from_directory(uploads_directory, filename)
 
 @click.group()
