@@ -7,7 +7,11 @@
         </time>
         <ul class="tags">
         {% for slug, tag in entry.tags | dictsort(by='value') %}
-            <li><a href="{{ url_for('archive_view', tag_slug=slug) }}">{{ tag }}</a></li>
+            <li>
+                <a href="{{ url_for('archive_view', tag_slug=slug) }}">
+                    {{ tag }}
+                </a>
+            </li>
         {% endfor %}
         </ul>
     </header>

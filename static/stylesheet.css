@@ -1,14 +1,13 @@
 body {
     margin: 0;
     font-size: 16px;
-    font-family: sans-serif;
+    font-family: Droid Sans, sans-serif;
     background-color: #EEEEEE;
     color: #444444;
 }
 
 nav ul {
-    background-color: #333333;
-    font-size: 18px;
+    background-color: #444444;
     list-style-type: none;
     margin: 0;
     padding: 0;
@@ -17,24 +16,24 @@ nav ul {
 
 nav li {
     float: right;
-    border-left: 1px solid #BBBBBB;
+    border-left: 1px solid #EEEEEE;
 }
 
 nav li:first-of-type {
     float: left;
     border-left: 0;
-    border-right: 1px solid #BBBBBB;
+    border-right: 1px solid #EEEEEE;
 }
 
 nav li:hover {
-    background-color: #222222;
+    background-color: #333333;
 }
 
 nav a {
+    color: #EEEEEE;
     display: block;
-    color: white;
     text-align: center;
-    padding: 10px 16px;
+    padding: 6px 10px;
     text-decoration: none;
 }
 

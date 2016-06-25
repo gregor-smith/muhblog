@@ -1,2 +1,2 @@
-recursive-include muhblog/static *
-recursive-include muhblog/templates *
+recursive-include static *
+recursive-include templates *

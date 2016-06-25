@@ -1,12 +1,12 @@
 import os
-import ctypes
-import shutil
+import functools
 import subprocess
 from pathlib import Path
 from datetime import datetime
 
 import click
 import flask
+import symlink
 import markdown
 import flask_frozen
 import markdown.extensions.meta
@@ -15,6 +15,7 @@ from slugify import slugify
 WINDOWS = os.name == 'nt'
 
 APP_DIR = Path(click.get_app_dir('muhblog'))
+CONFIG_FILE = APP_DIR.joinpath('config.json')
 
 app = flask.Flask(__name__)
 app.config['BLOG_URL'] = None
@@ -41,7 +42,11 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
-class Entry:
+class NiceRepr:
+    def __repr__(self):
+        return '{}(path={!r})'.format(type(self).__name__, self.path)
+
+class Entry(NiceRepr):
     def __init__(self, path):
         self.path = path
         self.parser = markdown.Markdown(
@@ -58,22 +63,17 @@ class Entry:
                                               '%Y-%m-%d %H:%M')
         self.tags = {slugify(tag): tag for tag in self.parser.Meta['tags']}
 
-    def __repr__(self):
-        return '{}(path={!r})'.format(type(self).__name__, self.path)
-
     def __lt__(self, other):
         try:
             return self.date_written < other.date_written
         except (AttributeError, TypeError):
             return NotImplemented
 
-class Archive(dict):
+class Archive(NiceRepr, dict):
     def __init__(self, app):
         super().__init__()
         self.app = app
         self.tags = {}
-
-    __repr__ = Entry.__repr__
 
     def reload(self):
         archive_directory = Path(self.app.config['BLOG_ARCHIVE_DIRECTORY'])
@@ -155,13 +155,12 @@ def uploads_view(filename=None):
         return flask.render_template('uploads.html', title='Uploads',
                                      timestamp_parser=datetime.fromtimestamp,
                                      directory=Path(uploads_directory))
-    return flask.send_from_directory(str(uploads_directory), filename)
-    flask.send_file()
+    return flask.send_from_directory(uploads_directory, filename)
 
 @click.group()
 @click.option('--config-path', envvar='BLOG_CONFIG_PATH',
-              default=str(APP_DIR.joinpath('config.json')),
-              type=click.Path(dir_okay=False, exists=True))
+              type=click.Path(dir_okay=False, exists=True),
+              default=str(CONFIG_FILE))
 def main(config_path):
     app.config.from_json(config_path, silent=True)
     archive.reload()
@@ -171,14 +170,11 @@ def freeze():
     freezer.freeze()
 
 def push_frozen_git(message=None):
-    cwd = os.getcwd()
-    try:
-        os.chdir(app.config['FREEZER_DESTINATION'])
-        subprocess.run(['git', 'add', '*'])
-        subprocess.run(['git', 'commit', '-a', '-m', message])
-        subprocess.run(['git', 'push'])
-    finally:
-        os.chdir(cwd)
+    run = functools.partial(subprocess.run,
+                            cwd=app.config['FREEZER_DESTINATION'])
+    run(['git', 'add', '*'])
+    run(['git', 'commit', '-a', '-m', message])
+    run(['git', 'push'])
 
 @main.command()
 @click.option('-m', '--message',
@@ -205,21 +201,14 @@ def upload(path, url, push, overwrite, rename, clipboard):
             destination.unlink()
         else:
             raise SystemExit('path already exists: {}'.format(destination))
-    if WINDOWS:
-        if ctypes.windll.shell32.IsUserAnAdmin():
-            destination.symlink_to(path)
-            print('symlink created:', destination)
-        elif path.drive == destination.drive:
-            subprocess.run(['mklink', '/H', str(destination), str(path)],
-                           shell=True, stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
-            print('hardlink created:', destination)
-        else:
-            shutil.copy2(str(path), str(destination))
-            print('copy created:', destination)
-    else:
-        destination.symlink_to(path)
+
+    link_type = symlink.link(destination, path, copy_fallback=True)
+    if link_type is symlink.LinkType.symlink:
         print('symlink created:', destination)
+    elif link_type is symlink.LinkType.hardlink:
+        print('hardlink created:', destination)
+    else:
+        print('copy created:', destination)
 
     if push:
         freezer.freeze()
@@ -239,3 +228,6 @@ def upload(path, url, push, overwrite, rename, clipboard):
 @click.option('--debug', is_flag=True)
 def run(freeze, **kwargs):
     (freezer if freeze else app).run(**kwargs)
+
+if __name__ == '__main__':
+    main()

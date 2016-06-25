@@ -7,7 +7,7 @@ setuptools.setup(
     author='Gregor Smith',
     author_email='gregor_smith@outlook.com',
     url='https://github.com/gregor-smith/muhblog',
-    packages=['muhblog'],
+    py_modules=['muhblog'],
     include_package_data=True,
     entry_points={'console_scripts': ['muhblog=muhblog:main']},
     platforms='any',
