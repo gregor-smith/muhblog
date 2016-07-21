@@ -2,7 +2,7 @@
 
 {% macro entry_line(entry, year, month, day) %}
     <li>
-        <a href="{{ url_for('entry_view', year=year, month=month, day=day, title_slug=entry.title_slug) }}" class="entry_links">{{ entry.title }}</a>
+        <a href="{{ url_for('entry_view', year=year, month=month, day=day, title_slug=entry.title_slug) }}" class="entry_link">{{ entry.title }}</a>
     </li>
 {% endmacro %}
 
@@ -25,7 +25,7 @@
 {% set last_day = 99 %}
 
 {% block content %}
-    <ul class="archive_list">
+    <ul class="year_list">
         {% for entry in entries %}
             {% set year = entry.date_written.year %}
             {% set month = entry.date_written.month %}

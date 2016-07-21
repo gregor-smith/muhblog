@@ -76,11 +76,11 @@ h1, h2, h3 {
     color: white;
 }
 
-.archive_list {
+.year_list {
     font-size: 14px;
 }
 
-.entry_links {
+.entry_link {
     font-size: 18px;
 }
 
@@ -96,3 +96,4 @@ h1, h2, h3 {
 .uploads_table tr {
     border-bottom: 1px solid #ccc;
 }
+

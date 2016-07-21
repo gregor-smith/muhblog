@@ -10,6 +10,11 @@
          href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png"
          href="{{ url_for('static', filename='favicon.png') }}"/>
+         {% if scripts %}
+            {% for url in scripts %}
+                <script type="text/javascript" src={{ url }}></script>
+            {% endfor %}
+         {% endif %}
     </head>
     <body>
         <nav>

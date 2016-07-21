@@ -58,6 +58,7 @@ class Entry:
         self.date_written = datetime.strptime(self.parser.Meta['date'][0],
                                               '%Y-%m-%d %H:%M')
         self.tags = {slugify(tag): tag for tag in self.parser.Meta['tags']}
+        self.scripts = self.parser.Meta.get('scripts', [])
 
     def __lt__(self, other):
         try:
@@ -114,10 +115,9 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
     else:
         title = None
 
-    entries = list(archive.filter(*conditions))
+    entries = sorted(archive.filter(*conditions), reverse=True)
     if not entries:
         flask.abort(404)
-    entries.sort(reverse=True)
 
     return flask.render_template('archive.html', title=title, entries=entries)
 
@@ -131,7 +131,8 @@ def entry_view(title_slug, **kwargs):
         entry = next(entries)
     except StopIteration:
         flask.abort(404)
-    return flask.render_template('entry.html', title=entry.title, entry=entry)
+    return flask.render_template('entry.html', title=entry.title,
+                                 entry=entry, scripts=entry.scripts)
 
 @app.route('/about/')
 def about_view():
