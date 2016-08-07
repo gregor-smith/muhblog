@@ -7,14 +7,16 @@
         <title>{{ BLOG_TITLE if title is none else
                   '{} | {}'.format(title, BLOG_TITLE) }}</title>
         <link rel="stylesheet" type="text/css"
+         href="//fonts.googleapis.com/css?family=Droid+Sans"/>
+        <link rel="stylesheet" type="text/css"
          href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png"
          href="{{ url_for('static', filename='favicon.png') }}"/>
-         {% if scripts %}
+        {% if scripts %}
             {% for url in scripts %}
                 <script type="text/javascript" src={{ url }}></script>
             {% endfor %}
-         {% endif %}
+        {% endif %}
     </head>
     <body>
         <nav>
