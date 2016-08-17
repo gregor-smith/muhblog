@@ -26,6 +26,11 @@ app.config['FREEZER_DESTINATION'] = str(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
+def format_datetime(dt=None):
+    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
+app.jinja_env.filters['format_datetime'] = format_datetime
+app.jinja_env.filters['parse_timestamp'] = datetime.fromtimestamp
+
 freezer = flask_frozen.Freezer(app)
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
@@ -143,10 +148,6 @@ def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
-def format_datetime(dt=None):
-    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
-app.jinja_env.filters['format_datetime'] = format_datetime
-
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
 def uploads_view(filename=None):
@@ -155,9 +156,8 @@ def uploads_view(filename=None):
         files = sorted(((path, path.stat()) for path in
                         Path(uploads_directory).iterdir() if path.is_file()),
                        key=lambda tup: tup[1].st_mtime, reverse=True)
-        return flask.render_template('uploads.html', title='Uploads',
-                                     timestamp_parser=datetime.fromtimestamp,
-                                     files=files)
+        return flask.render_template('uploads.html', files=files,
+                                     title='Uploads')
     return flask.send_from_directory(uploads_directory, filename)
 
 @click.group()

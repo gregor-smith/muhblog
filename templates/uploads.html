@@ -17,7 +17,7 @@
                         </a>
                     </td>
                     <td>{{ stat.st_size | filesizeformat }}</td>
-                    {% set date_modified = timestamp_parser(stat.st_mtime) %}
+                    {% set date_modified = stat.st_mtime | parse_timestamp %}
                     <td>
                         <time datetime="{{ date_modified }}">
                             {{ date_modified | format_datetime }}
