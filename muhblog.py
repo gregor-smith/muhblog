@@ -2,6 +2,7 @@ import os
 import functools
 import subprocess
 from pathlib import Path
+from typing import NamedTuple
 from datetime import datetime
 
 import click
@@ -16,6 +17,8 @@ WINDOWS = os.name == 'nt'
 
 APP_DIR = Path(click.get_app_dir('muhblog'))
 CONFIG_FILE = APP_DIR.joinpath('config.json')
+VIDEO_SUFFIXES = {'.mp4', '.webm'}
+PLAYER_SUFFIXES = {'.ogg', '.mp3', '.m4a', *VIDEO_SUFFIXES}
 
 app = flask.Flask(__name__)
 app.config['BLOG_URL'] = None
@@ -27,9 +30,8 @@ app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
 def format_datetime(dt=None):
-    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
+    return f'{dt or datetime.now():%d/%m/%Y %T}'
 app.jinja_env.filters['format_datetime'] = format_datetime
-app.jinja_env.filters['parse_timestamp'] = datetime.fromtimestamp
 
 freezer = flask_frozen.Freezer(app)
 
@@ -72,7 +74,7 @@ class Entry:
             return NotImplemented
 
     def __repr__(self):
-        return '{}(path={!r})'.format(type(self).__name__, self.path)
+        return f'{type(self).__name__}(path={self.path!r})'
 
 class Archive(dict):
     def __init__(self, app):
@@ -148,17 +150,33 @@ def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
+class Upload:
+    def __init__(self, path):
+        self.path = path
+        self.stat = path.stat()
+        self.date_modified = datetime.fromtimestamp(self.stat.st_mtime)
+        if path.suffix in PLAYER_SUFFIXES:
+            self.url = flask.url_for('player_view', filename=path.name)
+        else:
+            self.url = flask.url_for('uploads_view', filename=path.name)
+
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
 def uploads_view(filename=None):
     uploads_directory = app.config['BLOG_UPLOADS_DIRECTORY']
     if filename is None:
-        files = sorted(((path, path.stat()) for path in
+        files = sorted((Upload(path) for path in
                         Path(uploads_directory).iterdir() if path.is_file()),
-                       key=lambda tup: tup[1].st_mtime, reverse=True)
+                       key=lambda upload: upload.stat.st_mtime, reverse=True)
         return flask.render_template('uploads.html', files=files,
                                      title='Uploads')
     return flask.send_from_directory(uploads_directory, filename)
+
+@app.route('/player/<path:filename>')
+def player_view(filename):
+    path = Path(app.config['BLOG_UPLOADS_DIRECTORY'], filename)
+    return flask.render_template('player.html', filename=filename,
+                                 is_video=path.suffix in VIDEO_SUFFIXES)
 
 @click.group()
 @click.option('--config-path', envvar='BLOG_CONFIG_PATH',
@@ -181,7 +199,7 @@ def push_frozen_git(message=None):
 
 @main.command()
 @click.option('-m', '--message',
-              default=lambda: 'push called at {}'.format(datetime.now()))
+              default=lambda: f'push called at {datetime.now()}')
 def push(message):
     push_frozen_git(message)
 
@@ -203,7 +221,7 @@ def upload(path, url, push, overwrite, rename, clipboard):
         if overwrite:
             destination.unlink()
         else:
-            raise SystemExit('path already exists: {}'.format(destination))
+            raise SystemExit(f'path already exists: {destination}')
 
     link_type = symlink.link(destination, path, copy_fallback=True)
     if link_type is symlink.LinkType.symlink:
@@ -215,7 +233,7 @@ def upload(path, url, push, overwrite, rename, clipboard):
 
     if push:
         freezer.freeze()
-        push_frozen_git('uploaded {} at {}'.format(name, datetime.now()))
+        push_frozen_git(f'uploaded {name} at {datetime.now()}')
     if url is not None:
         with app.test_request_context():
             file_url = url + flask.url_for('uploads_view', filename=name)

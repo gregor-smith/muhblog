@@ -97,3 +97,9 @@ h1, h2, h3 {
     border-bottom: 1px solid #ccc;
 }
 
+.player {
+    display: block;
+    margin: 0 auto;
+    max-width: 600px;
+}
+

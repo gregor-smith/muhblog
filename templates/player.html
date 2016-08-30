@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+    <p>You might be wondering: why have this player page instead of just linking directly to the file and using the browser's player? Well, I tried that, but the file is just downloaded instead. I think it's got something to do with Bitbucket Pages not guessing mimetypes from suffixes. Anyway, this is a workaround to that problem.</p>
+    <br>
+    {% set url = url_for('uploads_view', filename=filename) %}
+    {% if is_video %}
+        <video class="player" src="{{ url }}" controls/>
+    {% else %}
+        <audio class="player" src="{{ url }}" controls/>
+    {% endif %}
+{% endblock %}

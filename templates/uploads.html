@@ -9,18 +9,17 @@
             </tr>
         </thead>
         <tbody>
-            {% for path, stat in files %}
+            {% for upload in files %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('uploads_view', filename=path.name) }}">
-                            {{ path.name }}
+                        <a href="{{ upload.url }}">
+                            {{ upload.path.name }}
                         </a>
                     </td>
-                    <td>{{ stat.st_size | filesizeformat }}</td>
-                    {% set date_modified = stat.st_mtime | parse_timestamp %}
+                    <td>{{ upload.stat.st_size | filesizeformat }}</td>
                     <td>
-                        <time datetime="{{ date_modified }}">
-                            {{ date_modified | format_datetime }}
+                        <time datetime="{{ upload.date_modified }}">
+                            {{ upload.date_modified | format_datetime }}
                         </time>
                     </td>
                 </tr>
