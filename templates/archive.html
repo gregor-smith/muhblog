@@ -2,7 +2,7 @@
 
 {% macro entry_line(entry, year, month, day) %}
     <li>
-        <a href="{{ url_for('entry_view', year=year, month=month, day=day, title_slug=entry.title_slug) }}" class="entry_link">{{ entry.title }}</a>
+        <a href="{{ url_for('entry_view', year=year, month=month, day=day, slug=entry['slug']) }}" class="entry_link">{{ entry['title'] }}</a>
     </li>
 {% endmacro %}
 
@@ -27,10 +27,10 @@
 {% block content %}
     <ul class="year_list">
         {% for entry in entries %}
-            {% set year = entry.date_written.year %}
-            {% set month = entry.date_written.month %}
+            {% set year = entry['date_written'].year %}
+            {% set month = entry['date_written'].month %}
             {% set month_str = '{:0>2}'.format(month) %}
-            {% set day = entry.date_written.day %}
+            {% set day = entry['date_written'].day %}
             {% set day_str = '{:0>2}'.format(day) %}
             {% if year < last_year %}
                 {% if last_year != 9999 %}

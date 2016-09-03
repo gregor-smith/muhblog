@@ -55,31 +55,29 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
-class Entry(dict):
-    def __init__(self, path):
-        self.path = path
-        self.parser = markdown.Markdown(
+def parse_entry(path):
+    parser = markdown.Markdown(
             extensions=[markdown.extensions.meta.MetaExtension(),
                         SpoilerTagExtension()]
-        )
+    )
 
-        self['text'] = self.parser.convert(path.read_text(encoding='utf-8'))
-        self['title'] = title = self.parser.Meta['title'][0]
-        self['title_slug'] = slugify(title, max_length=100)
-        self['date_written'] = datetime.strptime(self.parser.Meta['date'][0],
-                                                 '%Y-%m-%d %H:%M')
-        self.tags = ({'slug': slugify(tag), 'name': tag}
-                     for tag in self.parser.Meta['tags'])
-        self.scripts = self.parser.Meta.get('scripts', [])
+    text = parser.convert(path.read_text(encoding='utf-8'))
+    title = parser.Meta['title'][0]
+    slug = slugify(title, max_length=100)
+    date_written = datetime.strptime(parser.Meta['date'][0], '%Y-%m-%d %H:%M')
+    entry = {'text': text, 'title': title,
+             'slug': slug, 'date_written': date_written}
 
-    def __repr__(self):
-        return '{}(path={!r})'.format(type(self).__name__, self.path)
+    tags = ({'slug': slugify(tag), 'name': tag} for tag in parser.Meta['tags'])
+    scripts = parser.Meta.get('scripts', [])
+
+    return entry, tags, scripts
 
 def create_database():
     cursor = database.cursor()
 
     with database:
-        cursor.execute('''CREATE TABLE entries (title_slug TEXT,
+        cursor.execute('''CREATE TABLE entries (slug TEXT,
                                                 title TEXT, text MARKUP,
                                                 date_written TIMESTAMP)''')
         cursor.execute('CREATE TABLE tags (slug TEXT, name TEXT)')
@@ -88,26 +86,40 @@ def create_database():
         cursor.execute('CREATE TABLE scripts (url TEXT)')
         cursor.execute('''CREATE TABLE entry_scripts (entry_id INT,
                                                       script_id INT)''')
+        cursor.execute('''CREATE TABLE uploads (filename TEXT, filesize INT,
+                                                date_modified TIMESTAMP,
+                                                view TEXT)''')
 
         for path in Path(app.config['BLOG_ARCHIVE_DIRECTORY']).glob('*.md'):
             if not path.is_file():
                 continue
-            entry = Entry(path)
+            entry, tags, scripts = parse_entry(path)
             cursor.execute('''INSERT INTO entries
-                              VALUES (:title_slug, :title,
-                                      :text, :date_written)''',
-                           entry)
+                              VALUES (:slug, :title,
+                                      :text, :date_written)''', entry)
             entry_id = cursor.lastrowid
-            for tag_args in entry.tags:
+            for tag_args in tags:
                 cursor.execute('INSERT OR IGNORE INTO tags '
                                'VALUES (:slug, :name)', tag_args)
                 cursor.execute('INSERT INTO entry_tags VALUES (?, ?)',
                                (entry_id, cursor.lastrowid))
-            for script in entry.scripts:
+            for script in scripts:
                 cursor.execute('INSERT OR IGNORE INTO scripts VALUES (?)',
                                (script,))
                 cursor.execute('INSERT INTO entry_scripts VALUES (?, ?)',
                                (entry_id, cursor.lastrowid))
+
+        for path in Path(app.config['BLOG_UPLOADS_DIRECTORY']).iterdir():
+            if not path.is_file():
+                continue
+            stat = path.stat()
+            upload = {'filename': path.name, 'filesize': stat.st_size,
+                      'date_modified': datetime.fromtimestamp(stat.st_mtime),
+                      'view': ('player_view' if path.suffix
+                               in PLAYER_SUFFIXES else 'uploads_view')}
+            cursor.execute('''INSERT INTO uploads
+                              VALUES (:filename, :filesize,
+                                      :date_modified, :view)''', upload)
 
 @app.route('/')
 @app.route('/tag/<tag_slug>/')
@@ -144,13 +156,16 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
                                    'ORDER BY date_written DESC')
         title = None
 
-    # import ipdb; ipdb.set_trace()
+    entries = entries.fetchall()
+    if not entries:
+        flask.abort(404)
+
     return flask.render_template('archive.html', title=title, entries=entries)
 
-@app.route('/<year>/<month>/<day>/<title_slug>/')
-def entry_view(title_slug, **kwargs):
+@app.route('/<year>/<month>/<day>/<slug>/')
+def entry_view(slug, **kwargs):
     entry = database.execute('SELECT ROWID, * FROM entries '
-                             'WHERE title_slug = ?', (title_slug,)) \
+                             'WHERE slug = ?', (slug,)) \
         .fetchone()
     if entry is None:
         flask.abort(404)
@@ -175,23 +190,13 @@ def robots_txt_view():
     return flask.send_from_directory(app.static_folder, 'robots.txt',
                                      mimetype='text/plain')
 
-class Upload:
-    def __init__(self, path):
-        self.path = path
-        self.stat = path.stat()
-        self.date_modified = datetime.fromtimestamp(self.stat.st_mtime)
-        self.url = flask.url_for('player_view' if path.suffix
-                                 in PLAYER_SUFFIXES else 'uploads_view',
-                                 filename=path.name)
-
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
 def uploads_view(filename=None):
     uploads_directory = app.config['BLOG_UPLOADS_DIRECTORY']
     if filename is None:
-        files = sorted((Upload(path) for path in
-                        Path(uploads_directory).iterdir() if path.is_file()),
-                       key=lambda upload: upload.stat.st_mtime, reverse=True)
+        files = database.execute('SELECT * FROM uploads '
+                                 'ORDER BY uploads.date_modified DESC')
         return flask.render_template('uploads.html', files=files,
                                      title='Uploads')
     return flask.send_from_directory(uploads_directory, filename)

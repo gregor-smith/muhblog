@@ -12,14 +12,14 @@
             {% for upload in files %}
                 <tr>
                     <td>
-                        <a href="{{ upload.url }}">
-                            {{ upload.path.name }}
+                        <a href="{{ url_for(upload['view'], filename=upload['filename']) }}">
+                            {{ upload['filename'] }}
                         </a>
                     </td>
-                    <td>{{ upload.stat.st_size | filesizeformat }}</td>
+                    <td>{{ upload['filesize'] | filesizeformat }}</td>
                     <td>
-                        <time datetime="{{ upload.date_modified }}">
-                            {{ upload.date_modified | format_datetime }}
+                        <time datetime="{{ upload['date_modified'] }}">
+                            {{ upload['date_modified'] | format_datetime }}
                         </time>
                     </td>
                 </tr>
