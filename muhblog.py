@@ -65,7 +65,8 @@ class Entry:
         self.date_written = datetime.strptime(self.parser.Meta['date'][0],
                                               '%Y-%m-%d %H:%M')
         self.tags = {slugify(tag): tag for tag in self.parser.Meta['tags']}
-        self.scripts = self.parser.Meta.get('scripts', [])
+        self.scripts = (self.parser.Meta['scripts']
+                        if 'scripts' in self.parser.Meta else [])
 
     def __lt__(self, other):
         try:
@@ -155,10 +156,9 @@ class Upload:
         self.path = path
         self.stat = path.stat()
         self.date_modified = datetime.fromtimestamp(self.stat.st_mtime)
-        if path.suffix in PLAYER_SUFFIXES:
-            self.url = flask.url_for('player_view', filename=path.name)
-        else:
-            self.url = flask.url_for('uploads_view', filename=path.name)
+        self.url = flask.url_for('player_view' if path.suffix
+                                 in PLAYER_SUFFIXES else 'uploads_view',
+                                 filename=path.name)
 
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
@@ -172,11 +172,12 @@ def uploads_view(filename=None):
                                      title='Uploads')
     return flask.send_from_directory(uploads_directory, filename)
 
-@app.route('/player/<path:filename>')
+@app.route('/player/<path:filename>/')
 def player_view(filename):
     path = Path(app.config['BLOG_UPLOADS_DIRECTORY'], filename)
     return flask.render_template('player.html', filename=filename,
-                                 is_video=path.suffix in VIDEO_SUFFIXES)
+                                 is_video=path.suffix in VIDEO_SUFFIXES,
+                                 title=filename)
 
 @click.group()
 @click.option('--config-path', envvar='BLOG_CONFIG_PATH',
