@@ -1,8 +1,8 @@
 import os
+import sqlite3
 import functools
 import subprocess
 from pathlib import Path
-from typing import NamedTuple
 from datetime import datetime
 
 import click
@@ -30,10 +30,15 @@ app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
 def format_datetime(dt=None):
-    return f'{dt or datetime.now():%d/%m/%Y %T}'
+    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
 app.jinja_env.filters['format_datetime'] = format_datetime
 
 freezer = flask_frozen.Freezer(app)
+
+connection = sqlite3.connect(
+    ':memory:', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+)
+connection.row_factory = sqlite3.Row
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, match):
@@ -57,48 +62,58 @@ class Entry:
                         SpoilerTagExtension()]
         )
 
-        self.text = flask.Markup(
-            self.parser.convert(self.path.read_text(encoding='utf-8'))
-        )
+        self.text = self.parser.convert(path.read_text(encoding='utf-8'))
         self.title = self.parser.Meta['title'][0]
         self.title_slug = slugify(self.title, max_length=100)
         self.date_written = datetime.strptime(self.parser.Meta['date'][0],
                                               '%Y-%m-%d %H:%M')
         self.tags = {slugify(tag): tag for tag in self.parser.Meta['tags']}
-        self.scripts = (self.parser.Meta['scripts']
-                        if 'scripts' in self.parser.Meta else [])
-
-    def __lt__(self, other):
-        try:
-            return self.date_written < other.date_written
-        except (AttributeError, TypeError):
-            return NotImplemented
+        self.scripts = self.parser.Meta.get('scripts', [])
 
     def __repr__(self):
-        return f'{type(self).__name__}(path={self.path!r})'
+        return '{}(path={!r})'.format(type(self).__name__, self.path)
 
-class Archive(dict):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
-        self.tags = {}
+    def as_sql_args(self):
+        return {'title_slug': self.title_slug, 'title': self.title,
+                'text': self.text, 'date_written': self.date_written}
 
-    def reload(self):
-        archive_directory = Path(self.app.config['BLOG_ARCHIVE_DIRECTORY'])
-        for path in archive_directory.glob('*.md'):
-            if path.is_file():
-                self[path] = entry = Entry(path)
-                self.tags.update(entry.tags)
+    def tags_as_sql_args(self):
+        for slug, name in self.tags.items():
+            yield {'slug': slug, 'name': name}
 
-    def filter(self, *conditions):
-        for entry in self.values():
-            if all(condition(entry) for condition in conditions):
-                yield entry
+def create_database():
+    cursor = connection.cursor()
 
-archive = Archive(app)
+    with connection:
+        cursor.execute('''CREATE TABLE entries (title_slug TEXT,
+                                                title TEXT, text TEXT,
+                                                date_written TIMESTAMP)''')
+        cursor.execute('CREATE TABLE tags (slug TEXT, name TEXT)')
+        cursor.execute('''CREATE TABLE entry_tags (entry_id INT,
+                                                   tag_id INT)''')
+        cursor.execute('CREATE TABLE scripts (url TEXT)')
+        cursor.execute('''CREATE TABLE entry_scripts (entry_id INT,
+                                                      script_id INT)''')
 
-def date_condition(attr, value):
-    return lambda entry: getattr(entry.date_written, attr) == value
+        for path in Path(app.config['BLOG_ARCHIVE_DIRECTORY']).glob('*.md'):
+            if not path.is_file():
+                continue
+            entry = Entry(path)
+            cursor.execute('''INSERT INTO entries
+                              VALUES (:title_slug, :title,
+                                      :text, :date_written)''',
+                           entry.as_sql_args())
+            entry_id = cursor.lastrowid
+            for tag_args in entry.tags_as_sql_args():
+                cursor.execute('INSERT OR IGNORE INTO tags '
+                               'VALUES (:slug, :name)', tag_args)
+                cursor.execute('INSERT INTO entry_tags VALUES (?, ?)',
+                               (entry_id, cursor.lastrowid))
+            for script in entry.scripts:
+                cursor.execute('INSERT OR IGNORE INTO scripts VALUES (?)',
+                               (script,))
+                cursor.execute('INSERT INTO entry_scripts VALUES (?, ?)',
+                               (entry_id, cursor.lastrowid))
 
 @app.route('/')
 @app.route('/tag/<tag_slug>/')
@@ -131,16 +146,24 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
 
 @app.route('/<year>/<month>/<day>/<title_slug>/')
 def entry_view(title_slug, **kwargs):
-    conditions = (date_condition(attribute, int(kwargs[attribute]))
-                  for attribute in ['year', 'month', 'day'])
-    entries = archive.filter(*conditions,
-                             lambda entry: entry.title_slug == title_slug)
-    try:
-        entry = next(entries)
-    except StopIteration:
+    entry = connection.execute('SELECT ROWID, * FROM entries '
+                               'WHERE title_slug = ?', (title_slug,)) \
+        .fetchone()
+    if entry is None:
         flask.abort(404)
-    return flask.render_template('entry.html', title=entry.title,
-                                 entry=entry, scripts=entry.scripts)
+    entry_id = entry['ROWID']
+    tags = connection.execute('SELECT tags.* FROM tags JOIN entry_tags '
+                              'ON tags.ROWID = entry_tags.tag_id '
+                              'AND entry_tags.entry_id = ? '
+                              'ORDER BY tags.name', (entry_id,))
+    scripts = connection.execute('SELECT scripts.* FROM scripts '
+                                 'JOIN entry_scripts '
+                                 'ON scripts.ROWID = entry_scripts.script_id '
+                                 'AND entry_scripts.entry_id = ?', (entry_id,))
+    return flask.render_template('entry.html', tags=tags, title=entry['title'],
+                                 text=flask.Markup(entry['text']),
+                                 date_written=entry['date_written'],
+                                 scripts=scripts)
 
 @app.route('/about/')
 def about_view():
@@ -185,7 +208,7 @@ def player_view(filename):
               default=str(CONFIG_FILE))
 def main(config_path):
     app.config.from_json(config_path, silent=True)
-    archive.reload()
+    create_database()
 
 @main.command()
 def freeze():
@@ -200,7 +223,7 @@ def push_frozen_git(message=None):
 
 @main.command()
 @click.option('-m', '--message',
-              default=lambda: f'push called at {datetime.now()}')
+              default=lambda: 'push called at {}'.format(datetime.now()))
 def push(message):
     push_frozen_git(message)
 
@@ -222,7 +245,7 @@ def upload(path, url, push, overwrite, rename, clipboard):
         if overwrite:
             destination.unlink()
         else:
-            raise SystemExit(f'path already exists: {destination}')
+            raise SystemExit('path already exists: {}'.format(destination))
 
     link_type = symlink.link(destination, path, copy_fallback=True)
     if link_type is symlink.LinkType.symlink:
@@ -234,7 +257,7 @@ def upload(path, url, push, overwrite, rename, clipboard):
 
     if push:
         freezer.freeze()
-        push_frozen_git(f'uploaded {name} at {datetime.now()}')
+        push_frozen_git('uploaded {} at {}'.format(name, datetime.now()))
     if url is not None:
         with app.test_request_context():
             file_url = url + flask.url_for('uploads_view', filename=name)

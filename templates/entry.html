@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
     <header>
-        <h1>{{ entry.title }}</h1>
-        <time class="date" datetime="{{ entry.date_written }}">
-            {{ entry.date_written | format_datetime }}
+        <h1>{{ title }}</h1>
+        <time class="date" datetime="{{ date_written }}">
+            {{ date_written | format_datetime }}
         </time>
         <ul class="tags">
-        {% for slug, tag in entry.tags | dictsort(by='value') %}
+        {% for tag in tags %}
             <li>
-                <a href="{{ url_for('archive_view', tag_slug=slug) }}">
-                    {{ tag }}
+                <a href="{{ url_for('archive_view', tag_slug=tag['slug']) }}">
+                    {{ tag['name'] }}
                 </a>
             </li>
         {% endfor %}
         </ul>
     </header>
-    {{ entry.text }}
+    {{ text }}
 {% endblock %}
