@@ -14,7 +14,6 @@ import markdown.extensions.meta
 from slugify import slugify
 
 WINDOWS = os.name == 'nt'
-
 APP_DIR = Path(click.get_app_dir('muhblog'))
 CONFIG_FILE = APP_DIR.joinpath('config.json')
 VIDEO_SUFFIXES = {'.mp4', '.webm'}
@@ -33,12 +32,14 @@ def format_datetime(dt=None):
     return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
 app.jinja_env.filters['format_datetime'] = format_datetime
 
-freezer = flask_frozen.Freezer(app)
+def convert_markup(bytes):
+    return flask.Markup(str(bytes, encoding='utf-8'))
+sqlite3.register_converter('MARKUP', convert_markup)
 
-connection = sqlite3.connect(
-    ':memory:', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-)
-connection.row_factory = sqlite3.Row
+database = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
+database.row_factory = sqlite3.Row
+
+freezer = flask_frozen.Freezer(app)
 
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, match):
@@ -54,7 +55,7 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
-class Entry:
+class Entry(dict):
     def __init__(self, path):
         self.path = path
         self.parser = markdown.Markdown(
@@ -62,31 +63,24 @@ class Entry:
                         SpoilerTagExtension()]
         )
 
-        self.text = self.parser.convert(path.read_text(encoding='utf-8'))
-        self.title = self.parser.Meta['title'][0]
-        self.title_slug = slugify(self.title, max_length=100)
-        self.date_written = datetime.strptime(self.parser.Meta['date'][0],
-                                              '%Y-%m-%d %H:%M')
-        self.tags = {slugify(tag): tag for tag in self.parser.Meta['tags']}
+        self['text'] = self.parser.convert(path.read_text(encoding='utf-8'))
+        self['title'] = title = self.parser.Meta['title'][0]
+        self['title_slug'] = slugify(title, max_length=100)
+        self['date_written'] = datetime.strptime(self.parser.Meta['date'][0],
+                                                 '%Y-%m-%d %H:%M')
+        self.tags = ({'slug': slugify(tag), 'name': tag}
+                     for tag in self.parser.Meta['tags'])
         self.scripts = self.parser.Meta.get('scripts', [])
 
     def __repr__(self):
         return '{}(path={!r})'.format(type(self).__name__, self.path)
 
-    def as_sql_args(self):
-        return {'title_slug': self.title_slug, 'title': self.title,
-                'text': self.text, 'date_written': self.date_written}
-
-    def tags_as_sql_args(self):
-        for slug, name in self.tags.items():
-            yield {'slug': slug, 'name': name}
-
 def create_database():
-    cursor = connection.cursor()
+    cursor = database.cursor()
 
-    with connection:
+    with database:
         cursor.execute('''CREATE TABLE entries (title_slug TEXT,
-                                                title TEXT, text TEXT,
+                                                title TEXT, text MARKUP,
                                                 date_written TIMESTAMP)''')
         cursor.execute('CREATE TABLE tags (slug TEXT, name TEXT)')
         cursor.execute('''CREATE TABLE entry_tags (entry_id INT,
@@ -102,9 +96,9 @@ def create_database():
             cursor.execute('''INSERT INTO entries
                               VALUES (:title_slug, :title,
                                       :text, :date_written)''',
-                           entry.as_sql_args())
+                           entry)
             entry_id = cursor.lastrowid
-            for tag_args in entry.tags_as_sql_args():
+            for tag_args in entry.tags:
                 cursor.execute('INSERT OR IGNORE INTO tags '
                                'VALUES (:slug, :name)', tag_args)
                 cursor.execute('INSERT INTO entry_tags VALUES (?, ?)',
@@ -146,24 +140,22 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
 
 @app.route('/<year>/<month>/<day>/<title_slug>/')
 def entry_view(title_slug, **kwargs):
-    entry = connection.execute('SELECT ROWID, * FROM entries '
-                               'WHERE title_slug = ?', (title_slug,)) \
+    entry = database.execute('SELECT ROWID, * FROM entries '
+                             'WHERE title_slug = ?', (title_slug,)) \
         .fetchone()
     if entry is None:
         flask.abort(404)
     entry_id = entry['ROWID']
-    tags = connection.execute('SELECT tags.* FROM tags JOIN entry_tags '
-                              'ON tags.ROWID = entry_tags.tag_id '
-                              'AND entry_tags.entry_id = ? '
-                              'ORDER BY tags.name', (entry_id,))
-    scripts = connection.execute('SELECT scripts.* FROM scripts '
-                                 'JOIN entry_scripts '
-                                 'ON scripts.ROWID = entry_scripts.script_id '
-                                 'AND entry_scripts.entry_id = ?', (entry_id,))
-    return flask.render_template('entry.html', tags=tags, title=entry['title'],
-                                 text=flask.Markup(entry['text']),
-                                 date_written=entry['date_written'],
-                                 scripts=scripts)
+    tags = database.execute('SELECT tags.* FROM tags JOIN entry_tags '
+                            'ON tags.ROWID = entry_tags.tag_id '
+                            'AND entry_tags.entry_id = ? '
+                            'ORDER BY tags.name', (entry_id,))
+    scripts = database.execute('SELECT scripts.* FROM scripts '
+                               'JOIN entry_scripts '
+                               'ON scripts.ROWID = entry_scripts.script_id '
+                               'AND entry_scripts.entry_id = ?', (entry_id,))
+    return flask.render_template('entry.html', tags=tags,
+                                 scripts=scripts, **entry)
 
 @app.route('/about/')
 def about_view():
