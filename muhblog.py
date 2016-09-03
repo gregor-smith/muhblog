@@ -115,27 +115,36 @@ def create_database():
 @app.route('/<year>/<month>/')
 @app.route('/<year>/<month>/<day>/')
 def archive_view(tag_slug=None, year=None, month=None, day=None):
-    conditions = []
-    if year is not None:
-        title_parts = [year]
-        conditions.append(date_condition('year', int(year)))
-        if month is not None:
-            title_parts.append(month)
-            conditions.append(date_condition('month', int(month)))
-            if day is not None:
-                title_parts.append(day)
-                conditions.append(date_condition('day', int(day)))
-        title = '/'.join(reversed(title_parts))
-    elif tag_slug is not None:
-        title = archive.tags[tag_slug]
-        conditions.append(lambda entry: tag_slug in entry.tags)
+    if tag_slug is not None:
+        entries = database.execute('SELECT entries.* FROM entries '
+                                   'JOIN entry_tags '
+                                   'ON entries.ROWID == entry_tags.entry_id '
+                                   'JOIN tags '
+                                   'ON entry_tags.entry_id = tags.ROWID '
+                                   'WHERE tags.slug = ? '
+                                   'ORDER BY entries.date_written DESC',
+                                   (tag_slug,))
+        title = tag_slug
+    elif year is not None:
+        if day is not None:
+            format = '%d/%m/%Y'
+            title = '{}/{}/{}'.format(day, month, year)
+        elif month is not None:
+            format = '%m/%Y'
+            title = '{}/{}'.format(month, year)
+        else:
+            format = '%Y'
+            title = year
+        entries = database.execute('SELECT * FROM entries '
+                                   'WHERE strftime(?, date_written) = ? '
+                                   'ORDER BY date_written DESC',
+                                   (format, title))
     else:
+        entries = database.execute('SELECT * FROM entries '
+                                   'ORDER BY date_written DESC')
         title = None
 
-    entries = sorted(archive.filter(*conditions), reverse=True)
-    if not entries:
-        flask.abort(404)
-
+    # import ipdb; ipdb.set_trace()
     return flask.render_template('archive.html', title=title, entries=entries)
 
 @app.route('/<year>/<month>/<day>/<title_slug>/')
@@ -148,12 +157,12 @@ def entry_view(title_slug, **kwargs):
     entry_id = entry['ROWID']
     tags = database.execute('SELECT tags.* FROM tags JOIN entry_tags '
                             'ON tags.ROWID = entry_tags.tag_id '
-                            'AND entry_tags.entry_id = ? '
+                            'WHERE entry_tags.entry_id = ? '
                             'ORDER BY tags.name', (entry_id,))
     scripts = database.execute('SELECT scripts.* FROM scripts '
                                'JOIN entry_scripts '
                                'ON scripts.ROWID = entry_scripts.script_id '
-                               'AND entry_scripts.entry_id = ?', (entry_id,))
+                               'WHERE entry_scripts.entry_id = ?', (entry_id,))
     return flask.render_template('entry.html', tags=tags,
                                  scripts=scripts, **entry)
 
