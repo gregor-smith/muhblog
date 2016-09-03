@@ -120,7 +120,7 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
                                    'JOIN entry_tags '
                                    'ON entries.ROWID == entry_tags.entry_id '
                                    'JOIN tags '
-                                   'ON entry_tags.entry_id = tags.ROWID '
+                                   'ON entry_tags.tag_id = tags.ROWID '
                                    'WHERE tags.slug = ? '
                                    'ORDER BY entries.date_written DESC',
                                    (tag_slug,))
