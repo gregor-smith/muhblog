@@ -121,23 +121,32 @@ def create_database():
                               VALUES (:filename, :filesize,
                                       :date_modified, :view)''', upload)
 
-@app.route('/')
 @app.route('/tag/<tag_slug>/')
+def tag_view(tag_slug):
+    entries = database.execute('SELECT entries.*, tags.name AS tag_name '
+                               'FROM entries JOIN entry_tags '
+                               'ON entries.ROWID = entry_tags.entry_id '
+                               'JOIN tags '
+                               'ON entry_tags.tag_id = tags.ROWID '
+                               'WHERE tags.slug = ? '
+                               'ORDER BY entries.date_written DESC',
+                               (tag_slug,))
+    entries = entries.fetchall()
+    if not entries:
+        flask.abort(404)
+    return flask.render_template('archive.html', entries=entries,
+                                 title=entries[0]['tag_name'])
+
+@app.route('/')
 @app.route('/<year>/')
 @app.route('/<year>/<month>/')
 @app.route('/<year>/<month>/<day>/')
-def archive_view(tag_slug=None, year=None, month=None, day=None):
-    if tag_slug is not None:
-        entries = database.execute('SELECT entries.* FROM entries '
-                                   'JOIN entry_tags '
-                                   'ON entries.ROWID == entry_tags.entry_id '
-                                   'JOIN tags '
-                                   'ON entry_tags.tag_id = tags.ROWID '
-                                   'WHERE tags.slug = ? '
-                                   'ORDER BY entries.date_written DESC',
-                                   (tag_slug,))
-        title = tag_slug
-    elif year is not None:
+def archive_view(year=None, month=None, day=None):
+    if year is None:
+        entries = database.execute('SELECT * FROM entries '
+                                   'ORDER BY date_written DESC')
+        title = None
+    else:
         if day is not None:
             format = '%d/%m/%Y'
             title = '{}/{}/{}'.format(day, month, year)
@@ -151,15 +160,10 @@ def archive_view(tag_slug=None, year=None, month=None, day=None):
                                    'WHERE strftime(?, date_written) = ? '
                                    'ORDER BY date_written DESC',
                                    (format, title))
-    else:
-        entries = database.execute('SELECT * FROM entries '
-                                   'ORDER BY date_written DESC')
-        title = None
 
     entries = entries.fetchall()
     if not entries:
         flask.abort(404)
-
     return flask.render_template('archive.html', title=title, entries=entries)
 
 @app.route('/<year>/<month>/<day>/<slug>/')
@@ -173,7 +177,7 @@ def entry_view(slug, **kwargs):
     tags = database.execute('SELECT tags.* FROM tags JOIN entry_tags '
                             'ON tags.ROWID = entry_tags.tag_id '
                             'WHERE entry_tags.entry_id = ? '
-                            'ORDER BY tags.name', (entry_id,))
+                            'ORDER BY tags.name COLLATE NOCASE', (entry_id,))
     scripts = database.execute('SELECT scripts.* FROM scripts '
                                'JOIN entry_scripts '
                                'ON scripts.ROWID = entry_scripts.script_id '
