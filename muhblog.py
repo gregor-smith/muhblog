@@ -73,6 +73,14 @@ def parse_entry(path):
 
     return entry, tags, scripts
 
+def get_upload_details(path):
+    stat = path.stat()
+    return {'filename': path.name,
+            'filesize': stat.st_size,
+            'date_modified': datetime.fromtimestamp(stat.st_mtime),
+            'view': ('player_view' if path.suffix
+                     in PLAYER_SUFFIXES else 'uploads_view')}
+
 def create_database():
     cursor = database.cursor()
 
@@ -98,9 +106,9 @@ def create_database():
                               VALUES (:slug, :title,
                                       :text, :date_written)''', entry)
             entry_id = cursor.lastrowid
-            for tag_args in tags:
+            for tag in tags:
                 cursor.execute('INSERT OR IGNORE INTO tags '
-                               'VALUES (:slug, :name)', tag_args)
+                               'VALUES (:slug, :name)', tag)
                 cursor.execute('INSERT INTO entry_tags VALUES (?, ?)',
                                (entry_id, cursor.lastrowid))
             for script in scripts:
@@ -112,25 +120,21 @@ def create_database():
         for path in Path(app.config['BLOG_UPLOADS_DIRECTORY']).iterdir():
             if not path.is_file():
                 continue
-            stat = path.stat()
-            upload = {'filename': path.name, 'filesize': stat.st_size,
-                      'date_modified': datetime.fromtimestamp(stat.st_mtime),
-                      'view': ('player_view' if path.suffix
-                               in PLAYER_SUFFIXES else 'uploads_view')}
+            upload = get_upload_details(path)
             cursor.execute('''INSERT INTO uploads
                               VALUES (:filename, :filesize,
                                       :date_modified, :view)''', upload)
 
 @app.route('/tag/<tag_slug>/')
 def tag_view(tag_slug):
-    entries = database.execute('SELECT entries.*, tags.name AS tag_name '
-                               'FROM entries JOIN entry_tags '
-                               'ON entries.ROWID = entry_tags.entry_id '
-                               'JOIN tags '
-                               'ON entry_tags.tag_id = tags.ROWID '
-                               'WHERE tags.slug = ? '
-                               'ORDER BY entries.date_written DESC',
-                               (tag_slug,))
+    entries = database.execute(
+        'SELECT entries.*, tags.name AS tag_name FROM entries '
+        'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
+        'JOIN tags ON entry_tags.tag_id = tags.ROWID '
+        'WHERE tags.slug = ? '
+        'ORDER BY entries.date_written DESC',
+        (tag_slug,)
+    )
     entries = entries.fetchall()
     if not entries:
         flask.abort(404)
@@ -174,10 +178,13 @@ def entry_view(slug, **kwargs):
     if entry is None:
         flask.abort(404)
     entry_id = entry['ROWID']
-    tags = database.execute('SELECT tags.* FROM tags JOIN entry_tags '
-                            'ON tags.ROWID = entry_tags.tag_id '
-                            'WHERE entry_tags.entry_id = ? '
-                            'ORDER BY tags.name COLLATE NOCASE', (entry_id,))
+    tags = database.execute(
+        'SELECT tags.* FROM tags '
+        'JOIN entry_tags ON tags.ROWID = entry_tags.tag_id '
+        'WHERE entry_tags.entry_id = ? '
+        'ORDER BY tags.name COLLATE NOCASE',
+        (entry_id,)
+    )
     scripts = database.execute('SELECT scripts.* FROM scripts '
                                'JOIN entry_scripts '
                                'ON scripts.ROWID = entry_scripts.script_id '
@@ -227,8 +234,8 @@ def freeze():
 def push_frozen_git(message=None):
     run = functools.partial(subprocess.run,
                             cwd=app.config['FREEZER_DESTINATION'])
-    run(['git', 'add', '*'])
-    run(['git', 'commit', '-a', '-m', message])
+    run(['git', 'add', '.'])
+    run(['git', 'commit', '-am', message])
     run(['git', 'push'])
 
 @main.command()
