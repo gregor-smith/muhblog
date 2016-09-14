@@ -290,6 +290,3 @@ def upload(path, url, push, overwrite, rename, clipboard):
 @click.option('--debug', is_flag=True)
 def run(freeze, **kwargs):
     (freezer if freeze else app).run(**kwargs)
-
-if __name__ == '__main__':
-    main()
