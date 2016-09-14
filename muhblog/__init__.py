@@ -55,31 +55,42 @@ class SpoilerTagExtension(markdown.Extension):
         md.inlinePatterns[type(self).__name__] \
             = SpoilerTagPattern(self.regex_pattern, md)
 
-def parse_entry(path):
-    parser = markdown.Markdown(
-            extensions=[markdown.extensions.meta.MetaExtension(),
-                        SpoilerTagExtension()]
-    )
+class Entry:
+    def __init__(self, path):
+        self.path = path
 
-    text = parser.convert(path.read_text(encoding='utf-8'))
-    title = parser.Meta['title'][0]
-    slug = slugify(title, max_length=100)
-    date_written = datetime.strptime(parser.Meta['date'][0], '%Y-%m-%d %H:%M')
-    entry = {'text': text, 'title': title,
-             'slug': slug, 'date_written': date_written}
+        parser = markdown.Markdown(
+                extensions=[markdown.extensions.meta.MetaExtension(),
+                            SpoilerTagExtension()]
+        )
 
-    tags = ({'slug': slugify(tag), 'name': tag} for tag in parser.Meta['tags'])
-    scripts = parser.Meta.get('scripts', [])
+        self.text = parser.convert(path.read_text(encoding='utf-8'))
+        self.title = parser.Meta['title'][0]
+        self.slug = slugify(self.title, max_length=100)
+        self.date_written = datetime.strptime(parser.Meta['date'][0],
+                                              '%Y-%m-%d %H:%M')
 
-    return entry, tags, scripts
+        self.tags = {slugify(tag): tag for tag in parser.Meta['tags']}
+        self.scripts = parser.Meta.get('scripts', [])
 
-def get_upload_details(path):
-    stat = path.stat()
-    return {'filename': path.name,
-            'filesize': stat.st_size,
-            'date_modified': datetime.fromtimestamp(stat.st_mtime),
-            'view': ('player_view' if path.suffix
-                     in PLAYER_SUFFIXES else 'uploads_view')}
+    def as_sql_args(self):
+        return {'text': self.text, 'title': self.title,
+                'slug': self.slug, 'date_written': self.date_written}
+
+class Upload:
+    def __init__(self, path):
+        self.path = path
+        stat = path.stat()
+
+        self.filename = path.name
+        self.filesize = stat.st_size
+        self.date_modified = datetime.fromtimestamp(stat.st_mtime)
+        self.view = ('player_view' if path.suffix
+                     in PLAYER_SUFFIXES else 'uploads_view')
+
+    def as_sql_args(self):
+        return {'filename': self.filename, 'filesize': self.filesize,
+                'date_modified': self.date_modified, 'view': self.view}
 
 def create_database():
     cursor = database.cursor()
@@ -101,17 +112,18 @@ def create_database():
         for path in Path(app.config['BLOG_ARCHIVE_DIRECTORY']).glob('*.md'):
             if not path.is_file():
                 continue
-            entry, tags, scripts = parse_entry(path)
+            entry = Entry(path)
             cursor.execute('''INSERT INTO entries
                               VALUES (:slug, :title,
-                                      :text, :date_written)''', entry)
+                                      :text, :date_written)''',
+                           entry.as_sql_args())
             entry_id = cursor.lastrowid
-            for tag in tags:
+            for slug, tag in entry.tags.items():
                 cursor.execute('INSERT OR IGNORE INTO tags '
-                               'VALUES (:slug, :name)', tag)
+                               'VALUES (?, ?)', (slug, tag))
                 cursor.execute('INSERT INTO entry_tags VALUES (?, ?)',
                                (entry_id, cursor.lastrowid))
-            for script in scripts:
+            for script in entry.scripts:
                 cursor.execute('INSERT OR IGNORE INTO scripts VALUES (?)',
                                (script,))
                 cursor.execute('INSERT INTO entry_scripts VALUES (?, ?)',
@@ -120,10 +132,11 @@ def create_database():
         for path in Path(app.config['BLOG_UPLOADS_DIRECTORY']).iterdir():
             if not path.is_file():
                 continue
-            upload = get_upload_details(path)
+            upload = Upload(path)
             cursor.execute('''INSERT INTO uploads
                               VALUES (:filename, :filesize,
-                                      :date_modified, :view)''', upload)
+                                      :date_modified, :view)''',
+                           upload.as_sql_args())
 
 @app.route('/tag/<tag_slug>/')
 def tag_view(tag_slug):
