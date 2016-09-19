@@ -10,8 +10,8 @@ import flask
 import symlink
 import markdown
 import flask_frozen
-import markdown.extensions.meta
 from slugify import slugify
+from markdown.extensions.meta import MetaExtension
 
 WINDOWS = os.name == 'nt'
 APP_DIR = Path(click.get_app_dir('muhblog'))
@@ -32,6 +32,8 @@ def format_datetime(dt=None):
     return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
 app.jinja_env.filters['format_datetime'] = format_datetime
 
+freezer = flask_frozen.Freezer(app)
+
 def convert_markup(bytes):
     return flask.Markup(str(bytes, encoding='utf-8'))
 sqlite3.register_converter('MARKUP', convert_markup)
@@ -39,9 +41,12 @@ sqlite3.register_converter('MARKUP', convert_markup)
 database = sqlite3.connect(':memory:', detect_types=sqlite3.PARSE_DECLTYPES)
 database.row_factory = sqlite3.Row
 
-freezer = flask_frozen.Freezer(app)
-
 class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
+    regex_pattern = r'\[spoiler\](?P<text>.+?)\[/spoiler\]'
+
+    def __init__(self, markdown_instance=None):
+        super().__init__(self.regex_pattern, markdown_instance)
+
     def handleMatch(self, match):
         element = markdown.util.etree.Element('span')
         element.set('class', 'spoiler')
@@ -49,20 +54,15 @@ class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
         return element
 
 class SpoilerTagExtension(markdown.Extension):
-    regex_pattern = r'\[spoiler\](?P<text>.+?)\[/spoiler\]'
-
     def extendMarkdown(self, md, md_globals):
-        md.inlinePatterns[type(self).__name__] \
-            = SpoilerTagPattern(self.regex_pattern, md)
+        md.inlinePatterns[type(self).__name__] = SpoilerTagPattern(md)
 
 class Entry:
     def __init__(self, path):
         self.path = path
 
-        parser = markdown.Markdown(
-                extensions=[markdown.extensions.meta.MetaExtension(),
-                            SpoilerTagExtension()]
-        )
+        parser = markdown.Markdown(extensions=[MetaExtension(),
+                                               SpoilerTagExtension()])
 
         self.text = parser.convert(path.read_text(encoding='utf-8'))
         self.title = parser.Meta['title'][0]
@@ -267,7 +267,7 @@ def push(message):
 def upload(path, url, push, overwrite, rename, clipboard):
     path = Path(path).absolute()
     if rename:
-        name = str(datetime.now().timestamp()) + path.suffix
+        name = str(int(datetime.now().timestamp())) + path.suffix
     else:
         name = path.name
     destination = Path(app.config['BLOG_UPLOADS_DIRECTORY'], name)
