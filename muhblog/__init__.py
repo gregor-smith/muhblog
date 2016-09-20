@@ -21,10 +21,11 @@ PLAYER_SUFFIXES = {'.ogg', '.mp3', '.m4a', *VIDEO_SUFFIXES}
 
 app = flask.Flask(__name__)
 app.config['BLOG_URL'] = None
-app.config['BLOG_APP_DIRECTORY'] = str(APP_DIR)
-app.config['BLOG_ARCHIVE_DIRECTORY'] = str(APP_DIR.joinpath('archive'))
-app.config['BLOG_UPLOADS_DIRECTORY'] = str(APP_DIR.joinpath('uploads'))
-app.config['FREEZER_DESTINATION'] = str(APP_DIR.joinpath('freeze'))
+app.config['BLOG_APP_DIR'] = os.fspath(APP_DIR)
+app.config['BLOG_USER_ARCHIVE_DIR'] = os.fspath(APP_DIR.joinpath('archive'))
+app.config['BLOG_USER_UPLOADS_DIR'] = os.fspath(APP_DIR.joinpath('uploads'))
+app.config['BLOG_USER_STATIC_DIR'] = os.fspath(APP_DIR.joinpath('static'))
+app.config['FREEZER_DESTINATION'] = os.fspath(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 
@@ -60,7 +61,6 @@ class SpoilerTagExtension(markdown.Extension):
 class Entry:
     def __init__(self, path):
         self.path = path
-
         parser = markdown.Markdown(extensions=[MetaExtension(),
                                                SpoilerTagExtension()])
 
@@ -76,6 +76,15 @@ class Entry:
     def as_sql_args(self):
         return {'text': self.text, 'title': self.title,
                 'slug': self.slug, 'date_written': self.date_written}
+
+class AboutPage(Entry):
+    def __init__(self, path):
+        self.path = path
+        self.text = markdown.markdown(path.read_text(encoding='utf-8'),
+                                      extensions=[SpoilerTagExtension()])
+
+    def as_sql_args(self):
+        return {'text': self.text}
 
 class Upload:
     def __init__(self, path):
@@ -108,8 +117,9 @@ def create_database():
         cursor.execute('''CREATE TABLE uploads (filename TEXT, filesize INT,
                                                 date_modified TIMESTAMP,
                                                 view TEXT)''')
+        cursor.execute('CREATE TABLE about (text MARKUP)')
 
-        for path in Path(app.config['BLOG_ARCHIVE_DIRECTORY']).glob('*.md'):
+        for path in Path(app.config['BLOG_USER_ARCHIVE_DIR']).glob('*.md'):
             if not path.is_file():
                 continue
             entry = Entry(path)
@@ -129,7 +139,7 @@ def create_database():
                 cursor.execute('INSERT INTO entry_scripts VALUES (?, ?)',
                                (entry_id, cursor.lastrowid))
 
-        for path in Path(app.config['BLOG_UPLOADS_DIRECTORY']).iterdir():
+        for path in Path(app.config['BLOG_USER_UPLOADS_DIR']).iterdir():
             if not path.is_file():
                 continue
             upload = Upload(path)
@@ -137,6 +147,16 @@ def create_database():
                               VALUES (:filename, :filesize,
                                       :date_modified, :view)''',
                            upload.as_sql_args())
+
+        about_path = Path(app.config['BLOG_USER_STATIC_DIR'], 'about.md')
+        if about_path.exists():
+            about = AboutPage(about_path)
+            cursor.execute('INSERT INTO about VALUES (:text)',
+                           about.as_sql_args())
+        else:
+            text = markdown.markdown('No `about.md` could be found '
+                                     'in `BLOG_USER_STATIC_DIR`')
+            cursor.execute('INSERT INTO about VALUES (?)', (text,))
 
 @app.route('/tag/<tag_slug>/')
 def tag_view(tag_slug):
@@ -181,6 +201,7 @@ def archive_view(year=None, month=None, day=None):
     entries = entries.fetchall()
     if not entries:
         flask.abort(404)
+
     return flask.render_template('archive.html', title=title, entries=entries)
 
 @app.route('/<year>/<month>/<day>/<slug>/')
@@ -207,17 +228,23 @@ def entry_view(slug, **kwargs):
 
 @app.route('/about/')
 def about_view():
-    return flask.render_template('about.html', title='About')
+    about = database.execute('SELECT * from about').fetchone()
+    return flask.render_template('about.html', title='About', **about)
 
 @app.route('/robots.txt')
 def robots_txt_view():
-    return flask.send_from_directory(app.static_folder, 'robots.txt',
-                                     mimetype='text/plain')
+    return flask.send_from_directory(app.config['BLOG_USER_STATIC_DIR'],
+                                     'robots.txt', mimetype='text/plain')
+
+@app.route('/favicon.png')
+def favicon_view():
+    return flask.send_from_directory(app.config['BLOG_USER_STATIC_DIR'],
+                                     'favicon.png', mimetype='image/png')
 
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
 def uploads_view(filename=None):
-    uploads_directory = app.config['BLOG_UPLOADS_DIRECTORY']
+    uploads_directory = app.config['BLOG_USER_UPLOADS_DIR']
     if filename is None:
         files = database.execute('SELECT * FROM uploads '
                                  'ORDER BY uploads.date_modified DESC')
@@ -227,7 +254,7 @@ def uploads_view(filename=None):
 
 @app.route('/player/<path:filename>/')
 def player_view(filename):
-    path = Path(app.config['BLOG_UPLOADS_DIRECTORY'], filename)
+    path = Path(app.config['BLOG_USER_UPLOADS_DIR'], filename)
     return flask.render_template('player.html', filename=filename,
                                  is_video=path.suffix in VIDEO_SUFFIXES,
                                  title=filename)
@@ -235,7 +262,7 @@ def player_view(filename):
 @click.group()
 @click.option('--config-path', envvar='BLOG_CONFIG_PATH',
               type=click.Path(dir_okay=False, exists=True),
-              default=str(CONFIG_FILE))
+              default=os.fspath(CONFIG_FILE))
 def main(config_path):
     app.config.from_json(config_path, silent=True)
     create_database()
@@ -270,7 +297,7 @@ def upload(path, url, push, overwrite, rename, clipboard):
         name = str(int(datetime.now().timestamp())) + path.suffix
     else:
         name = path.name
-    destination = Path(app.config['BLOG_UPLOADS_DIRECTORY'], name)
+    destination = Path(app.config['BLOG_USER_UPLOADS_DIR'], name)
     if destination.exists():
         if overwrite:
             destination.unlink()
