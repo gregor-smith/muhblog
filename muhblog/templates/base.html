@@ -11,7 +11,7 @@
         <link rel="stylesheet" type="text/css"
          href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png"
-         href="{{ url_for('favicon_view') }}"/>
+         href="{{ url_for('favicon') }}"/>
         {% if scripts %}
             {% for url in scripts %}
                 <script type="text/javascript" src={{ url }}></script>
@@ -22,13 +22,13 @@
         <nav>
             <ul>
                 <li>
-                    <a href="{{ url_for('archive_view') }}">{{ BLOG_TITLE }}</a>
+                    <a href="{{ url_for('archive') }}">{{ BLOG_TITLE }}</a>
                 </li>
                 <li>
-                    <a href="{{ url_for('about_view') }}">about</a>
+                    <a href="{{ url_for('about') }}">about</a>
                 </li>
                 <li>
-                    <a href="{{ url_for('uploads_view') }}">uploads</a>
+                    <a href="{{ url_for('uploads') }}">uploads</a>
                 </li>
             </ul>
         </nav>

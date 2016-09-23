@@ -2,12 +2,12 @@
 
 {% macro entry_line(entry, year, month, day) %}
     <li>
-        <a href="{{ url_for('entry_view', year=year, month=month, day=day, slug=entry['slug']) }}" class="entry_link">{{ entry['title'] }}</a>
+        <a href="{{ url_for('entry', year=year, month=month, day=day, slug=entry['slug']) }}" class="entry_link">{{ entry['title'] }}</a>
     </li>
 {% endmacro %}
 
 {% macro day_lines(entry, year, month, day) %}
-    <a href="{{ url_for('archive_view', year=year, month=month, day=day) }}">{{ day }}</a>
+    <a href="{{ url_for('archive', year=year, month=month, day=day) }}">{{ day }}</a>
     <ul>
         {{ entry_line(entry, year, month, day) }}
 {% endmacro %}
@@ -15,7 +15,7 @@
 {% macro month_lines(entry, year, month) %}
     <ul>
         <li>
-            <a href="{{ url_for('archive_view', year=year, month=month) }}">{{ month }}</a>
+            <a href="{{ url_for('archive', year=year, month=month) }}">{{ month }}</a>
             <ul>
                 <li>
 {% endmacro %}
@@ -42,7 +42,7 @@
                     </li>
                 {% endif %}
                 <li>
-                    <a href="{{ url_for('archive_view', year=year) }}">
+                    <a href="{{ url_for('archive', year=year) }}">
                         {{ year }}
                     </a>
                 {{ month_lines(entry, year, month_str) }}
