@@ -2,7 +2,8 @@ from pathlib import Path
 
 import flask
 
-from . import app, database, VIDEO_SUFFIXES
+from . import database
+from . import app, VIDEO_SUFFIXES
 
 @app.route('/tag/<tag_slug>/')
 def tag(tag_slug):
