@@ -27,7 +27,7 @@ def freeze():
 def upload(path, overwrite, rename):
     path = Path(path).absolute()
     if rename:
-        name = str(int(datetime.now().timestamp())) + path.suffix
+        name = str(round(path.stat().st_mtime * 1000)) + path.suffix
     else:
         name = path.name
     destination = Path(app.config['BLOG_USER_UPLOADS_DIR'], name)
