@@ -1,0 +1,114 @@
+$width: 600px;
+$fonts: Noto Sans, sans-serif;
+$background-colour: #EEEEEE;
+$text-colour: #444444;
+
+body {
+    margin: 0;
+    font-size: 15px;
+    font-family: $fonts;
+    background-color: $background-colour;
+    color: $text-colour;
+
+    nav {
+        ul {
+            background-color: $text-colour;
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        li {
+            float: right;
+            border-left: 1px solid $background-colour;
+
+            &:first-of-type {
+                float: left;
+                border-left: 0;
+                border-right: 1px solid $background-colour;
+            }
+
+            &:hover {
+                background-color: #333333;
+            }
+        }
+
+        a {
+            color: $background-colour;
+            display: block;
+            text-align: center;
+            padding: 6px 10px;
+            text-decoration: none;
+        }
+    }
+
+    .content {
+        line-height: 1.6;
+        margin: 40px auto;
+        max-width: $width;
+        word-wrap: break-word;
+    }
+
+    h1, h2, h3 {
+        line-height: 1.2;
+    }
+
+    .date {
+        line-height: 2;
+        font-style: italic;
+        display: inline;
+        margin: 5px;
+    }
+
+    .tags {
+        padding: 0;
+        margin: 0;
+
+        li {
+            font-size: 16px;
+            font-style: italic;
+            display: inline;
+            margin: 5px;
+        }
+    }
+
+    .spoiler {
+        background-color: black;
+        color: black;
+
+        &:hover {
+            color: white;
+        }
+    }
+
+    .year_list {
+        font-size: 14px;
+    }
+
+    .entry_link {
+        font-size: 18px;
+    }
+
+    .uploads_table {
+        border-collapse: collapse;
+        width: 100%;
+
+        thead {
+            text-align: left;
+        }
+
+        tr {
+            border-bottom: 1px solid #ccc;
+        }
+    }
+
+    .player {
+        display: block;
+        margin: 0 auto;
+        max-width: $width;
+    }
+}
+
+
+

@@ -1,5 +1,7 @@
+import io
 from pathlib import Path
 
+import scss
 import flask
 
 from . import database
@@ -7,15 +9,13 @@ from . import app, VIDEO_SUFFIXES
 
 @app.route('/tag/<tag_slug>/')
 def tag(tag_slug):
-    entries = database.connection.execute(
-        'SELECT entries.*, tags.name AS tag_name FROM entries '
-        'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
-        'JOIN tags ON entry_tags.tag_id = tags.ROWID '
-        'WHERE tags.slug = ? '
-        'ORDER BY entries.date_written DESC',
-        tag_slug
-    )
-    entries = entries.fetchall()
+    entries = database.connection \
+        .execute('SELECT entries.*, tags.name AS tag_name FROM entries '
+                 'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
+                 'JOIN tags ON entry_tags.tag_id = tags.ROWID '
+                 'WHERE tags.slug = ? '
+                 'ORDER BY entries.date_written DESC', tag_slug) \
+        .fetchall()
     if not entries:
         flask.abort(404)
     return flask.render_template('archive.html', entries=entries,
@@ -27,27 +27,27 @@ def tag(tag_slug):
 @app.route('/<year>/<month>/<day>/')
 def archive(year=None, month=None, day=None):
     if year is None:
-        entries = database.connection.execute('SELECT * FROM entries '
-                                              'ORDER BY date_written DESC')
+        entries = database.connection \
+            .execute('SELECT * FROM entries ORDER BY date_written DESC') \
+            .fetchall()
         title = None
     else:
         if day is not None:
-            format = '%d/%m/%Y'
+            fmt = '%d/%m/%Y'
             title = '{}/{}/{}'.format(day, month, year)
         elif month is not None:
-            format = '%m/%Y'
+            fmt = '%m/%Y'
             title = '{}/{}'.format(month, year)
         else:
-            format = '%Y'
+            fmt = '%Y'
             title = year
-        entries = database.connection.execute(
-            'SELECT * FROM entries '
-            'WHERE strftime(:format, date_written) = :desired '
-            'ORDER BY date_written DESC',
-            format=format, desired=title
-        )
+        entries = database.connection \
+            .execute('SELECT * FROM entries '
+                     'WHERE strftime(:format, date_written) = :desired '
+                     'ORDER BY date_written DESC',
+                     format=fmt, desired=title) \
+            .fetchall()
 
-    entries = entries.fetchall()
     if not entries:
         flask.abort(404)
 
@@ -55,32 +55,37 @@ def archive(year=None, month=None, day=None):
 
 @app.route('/<year>/<month>/<day>/<slug>/')
 def entry(slug, **kwargs):
-    entry = database.connection.execute('SELECT ROWID, * FROM entries '
-                                        'WHERE slug = ?', slug) \
+    entry = database.connection \
+        .execute('SELECT ROWID, * FROM entries WHERE slug = ?', slug) \
         .fetchone()
     if entry is None:
         flask.abort(404)
     entry_id = entry['ROWID']
-    tags = database.connection.execute(
-        'SELECT tags.* FROM tags '
-        'JOIN entry_tags ON tags.ROWID = entry_tags.tag_id '
-        'WHERE entry_tags.entry_id = ? '
-        'ORDER BY tags.name COLLATE NOCASE',
-        entry_id
-    )
-    scripts = database.connection.execute(
-        'SELECT scripts.* FROM scripts '
-        'JOIN entry_scripts ON scripts.ROWID = entry_scripts.script_id '
-        'WHERE entry_scripts.entry_id = ?',
-        entry_id
-    )
+    tags = database.connection \
+        .execute('SELECT tags.* FROM tags '
+                 'JOIN entry_tags ON tags.ROWID = entry_tags.tag_id '
+                 'WHERE entry_tags.entry_id = ? '
+                 'ORDER BY tags.name COLLATE NOCASE', entry_id)
+    scripts = database.connection \
+        .execute('SELECT scripts.* FROM scripts '
+                 'JOIN entry_scripts ON scripts.ROWID = entry_scripts.script_id '
+                 'WHERE entry_scripts.entry_id = ?', entry_id)
     return flask.render_template('entry.html', tags=tags,
                                  scripts=scripts, **entry)
 
 @app.route('/about/')
 def about():
-    about = database.connection.execute('SELECT * from about').fetchone()
+    about = database.connection \
+        .execute('SELECT * from about') \
+        .fetchone()
     return flask.render_template('about.html', title='About', **about)
+
+@app.route('/stylesheet.css')
+def stylesheet():
+    path = Path(app.static_folder, 'stylesheet.scss')
+    css = scss.compiler.compile_file(path)
+    file = io.BytesIO(bytes(css, encoding='utf-8'))
+    return flask.send_file(file, mimetype='text/css')
 
 @app.route('/robots.txt')
 def robots_txt():
@@ -97,9 +102,9 @@ def favicon():
 def uploads(filename=None):
     uploads_directory = app.config['BLOG_USER_UPLOADS_DIR']
     if filename is None:
-        files = database.connection.execute(
-            'SELECT * FROM uploads ORDER BY uploads.date_modified DESC'
-        )
+        files = database.connection \
+            .execute('SELECT * FROM uploads '
+                     'ORDER BY uploads.date_modified DESC')
         return flask.render_template('uploads.html', files=files,
                                      title='Uploads')
     return flask.send_from_directory(uploads_directory, filename)

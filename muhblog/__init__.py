@@ -29,6 +29,6 @@ app.jinja_env.globals['app_config'] = app.config
 
 freezer = flask_frozen.Freezer(app)
 
-# must be imported to add views to app as it's not imported anywhere else'
+# must be imported to add views to app as it's not imported anywhere else
 from . import views
 from .cli import main
