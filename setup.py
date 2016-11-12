@@ -12,7 +12,7 @@ setuptools.setup(
     entry_points={'console_scripts': ['muhblog=muhblog:main']},
     platforms='any',
     install_requires=['click', 'Flask', 'python-slugify',
-                      'Markdown', 'Frozen-Flask', 'pyScss'],
+                      'mistune', 'Frozen-Flask', 'pyScss'],
     classifiers=['Development Status :: 3 - Alpha',
                  'Framework :: Flask',
                  'License :: OSI Approved :: MIT License',

@@ -4,10 +4,9 @@ from pathlib import Path
 from datetime import datetime
 
 import flask
-import markdown
 from slugify import slugify
-from markdown.extensions.meta import MetaExtension
 
+from . import markdown
 from . import app, PLAYER_SUFFIXES, SNUB_LENGTH
 
 def convert_markup(bytes):
@@ -31,22 +30,6 @@ connection = sqlite3.connect(':memory:', factory=Connection,
                              detect_types=sqlite3.PARSE_DECLTYPES)
 connection.row_factory = sqlite3.Row
 
-class SpoilerTagPattern(markdown.inlinepatterns.Pattern):
-    regex_pattern = r'\[spoiler\](?P<text>.+?)\[/spoiler\]'
-
-    def __init__(self, markdown_instance=None):
-        super().__init__(self.regex_pattern, markdown_instance)
-
-    def handleMatch(self, match):
-        element = markdown.util.etree.Element('span')
-        element.set('class', 'spoiler')
-        element.text = markdown.util.AtomicString(match.group('text'))
-        return element
-
-class SpoilerTagExtension(markdown.Extension):
-    def extendMarkdown(self, md, md_globals):
-        md.inlinePatterns[type(self).__name__] = SpoilerTagPattern(md)
-
 def format_datetime(dt):
     return '{:%d/%m/%Y %H:%M}'.format(dt)
 
@@ -57,19 +40,17 @@ class Entry:
 
     def __init__(self, path):
         self.path = path
-        parser = markdown.Markdown(extensions=[MetaExtension(),
-                                               SpoilerTagExtension()])
 
-        self.text = parser.convert(path.read_text(encoding='utf-8'))
+        metadata, self.text = markdown.parse(self.path)
         self.snub = self.snubify(self.text)
 
-        self.title = parser.Meta['title'][0]
+        self.title = metadata['title']
         self.slug = slugify(self.title, max_length=100)
-        self.date = datetime.strptime(parser.Meta['date'][0], '%Y-%m-%d %H:%M')
+        self.date = datetime.strptime(metadata['date'], '%Y-%m-%d %H:%M')
         self.formatted_date = format_datetime(self.date)
 
-        self.tags = {slugify(tag): tag for tag in parser.Meta['tags']}
-        self.scripts = parser.Meta.get('scripts', [])
+        self.tags = {slugify(tag): tag for tag in metadata['tags']}
+        self.scripts = metadata.get('scripts', [])
 
     @classmethod
     def snubify(cls, text):
@@ -85,8 +66,7 @@ class Entry:
 class AboutPage(Entry):
     def __init__(self, path):
         self.path = path
-        self.text = markdown.markdown(path.read_text(encoding='utf-8'),
-                                      extensions=[SpoilerTagExtension()])
+        self.text = markdown.parse(path, metadata=False)
 
     def as_sql_args(self):
         return {'text': self.text}
