@@ -1,29 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
-    <table class="uploads_table">
-        <thead>
-            <tr>
-                <th>Filename</th>
-                <th>Size</th>
-                <th>Date Modified</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for upload in files %}
+    <div class="uploads">
+        <table>
+            <thead>
                 <tr>
-                    <td>
-                        <a href="{{ url_for(upload['view'], filename=upload['filename']) }}">
-                            {{ upload['filename'] }}
-                        </a>
-                    </td>
-                    <td>{{ upload['filesize'] | filesizeformat }}</td>
-                    <td>
-                        <time datetime="{{ upload['date_modified'] }}">
-                            {{ upload['date_modified'] | format_datetime }}
-                        </time>
-                    </td>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Date Modified</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for upload in files %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for(upload['view'], filename=upload['filename']) }}">
+                                {{ upload['filename'] }}
+                            </a>
+                        </td>
+                        <td>{{ upload['filesize'] | filesizeformat }}</td>
+                        <td>
+                            <time datetime="{{ upload['date'] }}">
+                                {{ upload['formatted_date'] }}
+                            </time>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

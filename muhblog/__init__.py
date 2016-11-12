@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from datetime import datetime
 
 import click
 import flask
@@ -11,6 +10,8 @@ APP_DIR = Path(click.get_app_dir('muhblog'))
 CONFIG_FILE = APP_DIR.joinpath('config.json')
 VIDEO_SUFFIXES = {'.mp4', '.webm'}
 PLAYER_SUFFIXES = {'.ogg', '.mp3', '.m4a', *VIDEO_SUFFIXES}
+ENTRIES_PER_PAGE = 10
+SNUB_LENGTH = 300
 
 app = flask.Flask(__name__)
 app.config['BLOG_TITLE'] = 'muhblog'
@@ -21,9 +22,7 @@ app.config['BLOG_USER_STATIC_DIR'] = os.fspath(APP_DIR.joinpath('static'))
 app.config['FREEZER_DESTINATION'] = os.fspath(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 
-def format_datetime(dt=None):
-    return '{:%d/%m/%Y %T}'.format(dt or datetime.now())
-app.jinja_env.filters['format_datetime'] = format_datetime
+app.jinja_env.filters['pad_date'] = lambda date: '{:0>2}'.format(date)
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 app.jinja_env.globals['app_config'] = app.config
 

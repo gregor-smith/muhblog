@@ -1,36 +1,41 @@
 import io
+import itertools
 from pathlib import Path
 
 import scss
 import flask
 
 from . import database
-from . import app, VIDEO_SUFFIXES
-
-@app.route('/tag/<tag_slug>/')
-def tag(tag_slug):
-    entries = database.connection \
-        .execute('SELECT entries.*, tags.name AS tag_name FROM entries '
-                 'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
-                 'JOIN tags ON entry_tags.tag_id = tags.ROWID '
-                 'WHERE tags.slug = ? '
-                 'ORDER BY entries.date_written DESC', tag_slug) \
-        .fetchall()
-    if not entries:
-        flask.abort(404)
-    return flask.render_template('archive.html', entries=entries,
-                                 title=entries[0]['tag_name'])
+from . import app, VIDEO_SUFFIXES, ENTRIES_PER_PAGE
 
 @app.route('/')
+@app.route('/page/<int:page>/')
+def front(page=1):
+    entries = database.connection \
+        .execute('SELECT * FROM entries ORDER BY date DESC')
+    # I'm sure this could be done in the above
+    # SQLite statement but I can't figure out how
+    end = page * ENTRIES_PER_PAGE
+    start = end - ENTRIES_PER_PAGE
+    entries = list(itertools.islice(entries, start, end))
+    if not entries:
+        flask.abort(404)
+    return flask.render_template(
+        'front.html', title=None, entries=entries, page=page,
+        previous_page=None if page == 1 else page - 1,
+        next_page=page + 1 if len(entries) == ENTRIES_PER_PAGE else None
+    )
+
+@app.route('/archive/')
 @app.route('/<year>/')
 @app.route('/<year>/<month>/')
 @app.route('/<year>/<month>/<day>/')
 def archive(year=None, month=None, day=None):
     if year is None:
         entries = database.connection \
-            .execute('SELECT * FROM entries ORDER BY date_written DESC') \
+            .execute('SELECT * FROM entries ORDER BY date DESC') \
             .fetchall()
-        title = None
+        title = 'Archive'
     else:
         if day is not None:
             fmt = '%d/%m/%Y'
@@ -43,8 +48,8 @@ def archive(year=None, month=None, day=None):
             title = year
         entries = database.connection \
             .execute('SELECT * FROM entries '
-                     'WHERE strftime(:format, date_written) = :desired '
-                     'ORDER BY date_written DESC',
+                     'WHERE strftime(:format, date) = :desired '
+                     'ORDER BY date DESC',
                      format=fmt, desired=title) \
             .fetchall()
 
@@ -52,6 +57,20 @@ def archive(year=None, month=None, day=None):
         flask.abort(404)
 
     return flask.render_template('archive.html', title=title, entries=entries)
+
+@app.route('/tag/<tag_slug>/')
+def tag(tag_slug):
+    entries = database.connection \
+        .execute('SELECT entries.*, tags.name AS tag_name FROM entries '
+                 'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
+                 'JOIN tags ON entry_tags.tag_id = tags.ROWID '
+                 'WHERE tags.slug = ? '
+                 'ORDER BY entries.date DESC', tag_slug) \
+        .fetchall()
+    if not entries:
+        flask.abort(404)
+    return flask.render_template('archive.html', entries=entries,
+                                 title=entries[0]['tag_name'])
 
 @app.route('/<year>/<month>/<day>/<slug>/')
 def entry(slug, **kwargs):
@@ -104,7 +123,7 @@ def uploads(filename=None):
     if filename is None:
         files = database.connection \
             .execute('SELECT * FROM uploads '
-                     'ORDER BY uploads.date_modified DESC')
+                     'ORDER BY uploads.date DESC')
         return flask.render_template('uploads.html', files=files,
                                      title='Uploads')
     return flask.send_from_directory(uploads_directory, filename)

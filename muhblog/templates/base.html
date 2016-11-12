@@ -22,13 +22,16 @@
         <nav>
             <ul>
                 <li>
-                    <a href="{{ url_for('archive') }}">{{ BLOG_TITLE }}</a>
+                    <a href="{{ url_for('front') }}">{{ BLOG_TITLE }}</a>
                 </li>
                 <li>
                     <a href="{{ url_for('about') }}">about</a>
                 </li>
                 <li>
                     <a href="{{ url_for('uploads') }}">uploads</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('archive') }}">archive</a>
                 </li>
             </ul>
         </nav>

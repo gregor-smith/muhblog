@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="front">
+        {% for entry in entries %}
+            <div class="front-entry">
+                {% set date = entry['date'] %}
+                <h1>
+                    <a href="{{ url_for('entry', year=date.year, month=date.month | pad_date, day=date.day | pad_date, slug=entry['slug']) }}">
+                        {{ entry['title'] }}
+                    </a>
+                </h1>
+                <time class="date" datetime="{{ date }}">
+                    {{ entry['formatted_date']}}
+                </time>
+                {{ entry['snub'] }}
+            </div>
+        {% endfor %}
+        <div class="pages">
+            {% if previous_page is none %}
+                << Previous
+            {% else %}
+                <a href="{{ url_for('front') if previous_page == 1 else url_for('front', page=previous_page) }}">
+                    << Previous
+                </a>
+            {% endif %}
+            — <strong>{{ page }}</strong> —
+            {% if next_page is none %}
+                    Next >>
+            {% else %}
+                <a href="{{ url_for('front', page=next_page) }}">
+                    Next >>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
