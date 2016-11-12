@@ -33,7 +33,7 @@ def archive(year=None, month=None, day=None):
         entries = database.connection \
             .execute('SELECT * FROM entries ORDER BY date DESC') \
             .fetchall()
-        title = 'Archive'
+        title = 'archive'
     else:
         if day is not None:
             fmt = '%d/%m/%Y'
@@ -95,7 +95,7 @@ def about():
     about = database.connection \
         .execute('SELECT * from about') \
         .fetchone()
-    return flask.render_template('about.html', title='About', **about)
+    return flask.render_template('about.html', title='about', **about)
 
 @app.route('/stylesheet.css')
 def stylesheet():
@@ -123,7 +123,7 @@ def uploads(filename=None):
             .execute('SELECT * FROM uploads '
                      'ORDER BY uploads.date DESC')
         return flask.render_template('uploads.html', files=files,
-                                     title='Uploads')
+                                     title='uploads')
     return flask.send_from_directory(uploads_directory, filename)
 
 @app.route('/player/<path:filename>/')

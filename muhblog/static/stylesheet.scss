@@ -10,6 +10,10 @@ body {
     font-family: $fonts;
     background-color: $background-colour;
     color: $text-colour;
+
+    a {
+        text-decoration: none;
+    }
 }
 
 nav {
@@ -41,7 +45,6 @@ nav {
         display: block;
         text-align: center;
         padding: 6px 10px;
-        text-decoration: none;
     }
 }
 
@@ -50,6 +53,12 @@ nav {
     margin: 40px auto;
     max-width: $width;
     word-wrap: break-word;
+
+    a {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 
     h1, h2, h3 {
         line-height: 1.2;
