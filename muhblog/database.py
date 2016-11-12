@@ -51,7 +51,9 @@ def format_datetime(dt):
     return '{:%d/%m/%Y %H:%M}'.format(dt)
 
 class Entry:
-    snub_regex = re.compile(r'<p>((?:(?!<\/p>).){{1,{}}})'.format(SNUB_LENGTH))
+    snub_regex = re.compile(r'<p>((?:(?!<\/p>).){{1,{}}}\.)'
+                                .format(SNUB_LENGTH),
+                            re.DOTALL)
 
     def __init__(self, path):
         self.path = path
@@ -73,9 +75,7 @@ class Entry:
     def snubify(cls, text):
         snub = cls.snub_regex.search(text) \
             .group(1)
-        return ('<p class="snub">{}[...]</p>'.format(snub)
-                if len(snub) == SNUB_LENGTH else
-                '<p class="snub">{}</p>'.format(snub))
+        return '<p>{}</p>'.format(snub)
 
     def as_sql_args(self):
         return {'text': self.text, 'snub': self.snub,

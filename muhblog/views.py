@@ -1,5 +1,4 @@
 import io
-import itertools
 from pathlib import Path
 
 import scss
@@ -11,19 +10,18 @@ from . import app, VIDEO_SUFFIXES, ENTRIES_PER_PAGE
 @app.route('/')
 @app.route('/page/<int:page>/')
 def front(page=1):
-    entries = database.connection \
-        .execute('SELECT * FROM entries ORDER BY date DESC')
-    # I'm sure this could be done in the above
-    # SQLite statement but I can't figure out how
+    all_entries = database.connection \
+        .execute('SELECT * FROM entries ORDER BY date DESC') \
+        .fetchall()
     end = page * ENTRIES_PER_PAGE
     start = end - ENTRIES_PER_PAGE
-    entries = list(itertools.islice(entries, start, end))
+    entries = all_entries[start:end]
     if not entries:
         flask.abort(404)
     return flask.render_template(
         'front.html', title=None, entries=entries, page=page,
         previous_page=None if page == 1 else page - 1,
-        next_page=page + 1 if len(entries) == ENTRIES_PER_PAGE else None
+        next_page=None if entries[-1] == all_entries[-1] else page + 1
     )
 
 @app.route('/archive/')
