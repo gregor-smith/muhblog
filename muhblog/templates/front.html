@@ -16,19 +16,23 @@
             </div>
         {% endfor %}
         <div id="pages">
+            {% set previous_text = '⇇ Prev' %}
             {% if previous_page is none %}
-                ⇇ Previous
+                {{ previous_text }}
             {% else %}
                 <a href="{{ url_for('front') if previous_page == 1 else url_for('front', page=previous_page) }}">
-                    ⇇ Previous
+                    {{ previous_text }}
                 </a>
             {% endif %}
-            — <strong>{{ page }}</strong> —
+
+            — {{ page }} —
+
+            {% set next_text = 'Next ⇉' %}
             {% if next_page is none %}
-                    Next ⇉
+                {{ next_text }}
             {% else %}
                 <a href="{{ url_for('front', page=next_page) }}">
-                    Next ⇉
+                    {{ next_text }}
                 </a>
             {% endif %}
         </div>
