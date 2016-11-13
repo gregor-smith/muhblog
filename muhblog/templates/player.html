@@ -4,8 +4,8 @@
     <br>
     {% set url = url_for('uploads', filename=filename) %}
     {% if is_video %}
-        <video class="player" src="{{ url }}" controls/>
+        <video id="player" src="{{ url }}" controls/>
     {% else %}
-        <audio class="player" src="{{ url }}" controls/>
+        <audio id="player" src="{{ url }}" controls/>
     {% endif %}
 {% endblock %}

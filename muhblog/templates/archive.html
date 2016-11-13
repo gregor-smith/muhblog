@@ -33,7 +33,7 @@
 {% set last_day = 99 %}
 
 {% block content %}
-    <div class="archive">
+    <div id="archive">
         <ul>
             {% for entry in entries %}
                 {% set year = entry['date'].year %}

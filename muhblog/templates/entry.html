@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="entry">
+    <div id="entry">
         <header>
             <h1>{{ title }}</h1>
             <time class="date" datetime="{{ date }}">
-                {{ formatted_date }}
+                {{ date | format_datetime }}
             </time>
-            <ul class="tags">
+            <ul id="tags">
             {% for tag in tags %}
                 <li>
                     <a href="{{ url_for('tag', tag_slug=tag['slug']) }}">

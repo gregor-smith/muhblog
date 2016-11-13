@@ -22,7 +22,18 @@ app.config['BLOG_USER_STATIC_DIR'] = os.fspath(APP_DIR.joinpath('static'))
 app.config['FREEZER_DESTINATION'] = os.fspath(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
 
-app.jinja_env.filters['pad_date'] = lambda date: '{:0>2}'.format(date)
+def pad_date_int(date_int):
+    return '{:0>2}'.format(date_int)
+app.jinja_env.filters['pad_date'] = pad_date_int
+
+def format_datetime(dt):
+    return '{:%d/%m/%Y %H:%M}'.format(dt)
+app.jinja_env.filters['format_datetime'] = format_datetime
+
+def format_datetime_iso(dt):
+    return '{:%Y-%m-%d %H:%M}'.format(dt)
+app.jinja_env.filters['format_datetime_iso'] = format_datetime_iso
+
 app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
 app.jinja_env.globals['app_config'] = app.config
 

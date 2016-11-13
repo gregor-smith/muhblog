@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="uploads">
+    <div id="uploads">
         <table>
             <thead>
                 <tr>
-                    <th id="name">Filename</th>
-                    <th id="size">Size</th>
-                    <th id="date">Date Modified</th>
+                    <th class="name">Filename</th>
+                    <th class="size">Size</th>
+                    <th class="modified">Date Modified</th>
                 </tr>
             </thead>
             <tbody>
                 {% for upload in files %}
                     <tr>
-                        <td id="name">
+                        <td class="name">
                             <a href="{{ url_for(upload['view'], filename=upload['filename']) }}">
                                 {{ upload['filename'] }}
                             </a>
                         </td>
-                        <td id="size">
+                        <td class="size" data-size="{{ upload['filesize'] }}">
                             {{ upload['filesize'] | filesizeformat }}
                         </td>
-                        <td id="date">
-                            <time datetime="{{ upload['date'] }}">
-                                {{ upload['formatted_date'] }}
+                        <td class="modified">
+                            <time datetime="{{ upload['date'] | format_datetime_iso }}">
+                                {{ upload['date'] | format_datetime }}
                             </time>
                         </td>
                     </tr>

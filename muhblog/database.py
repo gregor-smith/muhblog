@@ -30,9 +30,6 @@ connection = sqlite3.connect(':memory:', factory=Connection,
                              detect_types=sqlite3.PARSE_DECLTYPES)
 connection.row_factory = sqlite3.Row
 
-def format_datetime(dt):
-    return '{:%d/%m/%Y %H:%M}'.format(dt)
-
 class Entry:
     snub_regex = re.compile(r'<p>((?:(?!<\/p>).){{1,{}}}\.)'
                                 .format(SNUB_LENGTH),
@@ -47,7 +44,6 @@ class Entry:
         self.title = metadata['title']
         self.slug = slugify(self.title, max_length=100)
         self.date = datetime.strptime(metadata['date'], '%Y-%m-%d %H:%M')
-        self.formatted_date = format_datetime(self.date)
 
         self.tags = {slugify(tag): tag for tag in metadata['tags']}
         self.scripts = metadata.get('scripts', [])
@@ -60,8 +56,8 @@ class Entry:
 
     def as_sql_args(self):
         return {'text': self.text, 'snub': self.snub,
-                'title': self.title, 'slug': self.slug, 'date': self.date,
-                'formatted_date': self.formatted_date}
+                'title': self.title, 'slug': self.slug,
+                'date': self.date}
 
 class AboutPage(Entry):
     def __init__(self, path):
@@ -79,13 +75,11 @@ class Upload:
         self.filename = path.name
         self.filesize = stat.st_size
         self.date = datetime.fromtimestamp(stat.st_mtime)
-        self.formatted_date = format_datetime(self.date)
         self.view = 'player' if path.suffix in PLAYER_SUFFIXES else 'uploads'
 
     def as_sql_args(self):
         return {'filename': self.filename, 'filesize': self.filesize,
-                'date': self.date, 'formatted_date': self.formatted_date,
-                'view': self.view}
+                'date': self.date, 'view': self.view}
 
 def create_and_populate():
     cursor = connection.cursor()
@@ -97,16 +91,14 @@ def create_and_populate():
 
 def create_tables(cursor):
     cursor.execute('''CREATE TABLE entries (slug TEXT, title TEXT, text MARKUP,
-                                            snub MARKUP, date TIMESTAMP,
-                                            formatted_date TEXT)''')
+                                            snub MARKUP, date TIMESTAMP)''')
     cursor.execute('CREATE TABLE tags (slug TEXT, name TEXT)')
     cursor.execute('''CREATE TABLE entry_tags (entry_id INT, tag_id INT)''')
     cursor.execute('CREATE TABLE scripts (url TEXT)')
     cursor.execute('''CREATE TABLE entry_scripts (entry_id INT,
                                                   script_id INT)''')
     cursor.execute('''CREATE TABLE uploads (filename TEXT, filesize INT,
-                                            date TIMESTAMP,
-                                            formatted_date TEXT, view TEXT)''')
+                                            date TIMESTAMP, view TEXT)''')
     cursor.execute('CREATE TABLE about (text MARKUP)')
 
 def add_entries(cursor):
@@ -115,8 +107,7 @@ def add_entries(cursor):
             continue
         entry = Entry(path)
         cursor.execute('''INSERT INTO entries
-                          VALUES (:slug, :title, :text, :snub,
-                                  :date, :formatted_date)''',
+                          VALUES (:slug, :title, :text, :snub, :date)''',
                        **entry.as_sql_args())
         entry_id = cursor.lastrowid
         for slug, tag in entry.tags.items():
@@ -135,8 +126,7 @@ def add_uploads(cursor):
             continue
         upload = Upload(path)
         cursor.execute('''INSERT INTO uploads
-                          VALUES (:filename, :filesize, :date,
-                                  :formatted_date, :view)''',
+                          VALUES (:filename, :filesize, :date, :view)''',
                        **upload.as_sql_args())
 
 def add_about(cursor):

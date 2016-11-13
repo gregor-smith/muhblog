@@ -120,10 +120,13 @@ def uploads(filename=None):
     uploads_directory = app.config['BLOG_USER_UPLOADS_DIR']
     if filename is None:
         files = database.connection \
-            .execute('SELECT * FROM uploads '
-                     'ORDER BY uploads.date DESC')
-        return flask.render_template('uploads.html', files=files,
-                                     title='uploads')
+            .execute('SELECT * FROM uploads ORDER BY uploads.date DESC')
+        return flask.render_template(
+            'uploads.html', files=files, title='uploads',
+            scripts=[flask.url_for('static', filename='jquery.js'),
+                     flask.url_for('static', filename='tablesorter.js'),
+                     flask.url_for('static', filename='sort.js')]
+        )
     return flask.send_from_directory(uploads_directory, filename)
 
 @app.route('/player/<path:filename>/')

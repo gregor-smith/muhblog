@@ -78,7 +78,7 @@ nav {
     }
 }
 
-.content {
+#content {
     line-height: 1.6;
     margin: 40px auto;
     max-width: $mobile-width;
@@ -106,7 +106,11 @@ nav {
         }
     }
 
-    .front {
+    .date {
+        font-style: italic;
+    }
+
+    #front {
         .front-entry {
             border-bottom: $rule-border;
 
@@ -116,7 +120,7 @@ nav {
             }
         }
 
-        .pages {
+        #pages {
             text-align: center;
             margin-top: 15px;
             font-size: $mobile-pages-font-size;
@@ -126,15 +130,14 @@ nav {
         }
     }
 
-    .entry {
+    #id {
         .date {
-            font-style: italic;
             line-height: 2;
             display: inline;
             margin: 5px;
         }
 
-        .tags {
+        #tags {
             padding: 0;
             margin: 0;
 
@@ -146,7 +149,7 @@ nav {
         }
     }
 
-    .uploads {
+    #uploads {
         table {
             font-size: 30px;
             @media (min-width: $desktop-min-width) {
@@ -168,19 +171,19 @@ nav {
                 overflow: hidden;
                 text-overflow: ellipsis;
 
-                &#name {
+                &.name {
                     max-width: $mobile-width / 2;
                     @media (min-width: $desktop-min-width) {
                         max-width: $desktop-width / 2;
                     }
                 }
-                &#size {
+                &.size {
                     max-width: $mobile-width / 6;
                     @media (min-width: $desktop-min-width) {
                         max-width: $desktop-width / 6;
                     }
                 }
-                &#date {
+                &.modified {
                     max-width: $mobile-width / 3;
                     @media (min-width: $desktop-min-width) {
                         max-width: $desktop-width / 3;
@@ -190,7 +193,7 @@ nav {
         }
     }
 
-    .player {
+    #player {
         display: block;
         margin: 0 auto;
         max-width: $mobile-width;

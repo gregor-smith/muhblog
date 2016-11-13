@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="front">
+    <div id="front">
         {% for entry in entries %}
             <div class="front-entry">
                 {% set date = entry['date'] %}
@@ -10,12 +10,12 @@
                     </a>
                 </h1>
                 <time class="date" datetime="{{ date }}">
-                    {{ entry['formatted_date']}}
+                    {{ date | format_datetime }}
                 </time>
                 {{ entry['snub'] }}
             </div>
         {% endfor %}
-        <div class="pages">
+        <div id="pages">
             {% if previous_page is none %}
                 << Previous
             {% else %}
