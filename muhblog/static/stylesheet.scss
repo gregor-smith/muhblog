@@ -193,6 +193,9 @@ nav {
     .player {
         display: block;
         margin: 0 auto;
-        max-width: $desktop-width;
+        max-width: $mobile-width;
+        @media (min-width: $desktop-min-width) {
+            max-width: $desktop-width;
+        }
     }
 }
