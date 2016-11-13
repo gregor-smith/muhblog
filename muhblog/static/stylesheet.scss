@@ -160,21 +160,23 @@ nav {
                     cursor: pointer;
                     font-weight: bold;
                     &:before {
-                        content: "⇅ ";
+                        content: "▲ ";
+                        color: $background-colour;
                     }
                 }
 
                 .headerSortDown {
                     background-color: $rule-colour;
                     &:before {
-                        content: "⇈ ";
+                        color: $text-colour;
                     }
                 }
 
                 .headerSortUp {
                     background-color: $rule-colour;
                     &:before {
-                        content: "⇊ ";
+                        content: "▼ ";
+                        color: $text-colour;
                     }
                 }
             }

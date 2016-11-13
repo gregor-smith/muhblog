@@ -16,7 +16,7 @@
             </div>
         {% endfor %}
         <div id="pages">
-            {% set previous_text = '⇇ Prev' %}
+            {% set previous_text = '◀ Prev' %}
             {% if previous_page is none %}
                 {{ previous_text }}
             {% else %}
@@ -27,7 +27,7 @@
 
             — {{ page }} —
 
-            {% set next_text = 'Next ⇉' %}
+            {% set next_text = 'Next ▶' %}
             {% if next_page is none %}
                 {{ next_text }}
             {% else %}
