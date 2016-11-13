@@ -1,6 +1,7 @@
 $background-colour: #EEEEEE;
 $text-colour: #444444;
-$rule-border: 1px solid #CCCCCC;
+$rule-colour: #CCCCCC;
+$rule-border: 1px solid $rule-colour;
 
 $fonts: Noto Sans, sans-serif;
 
@@ -160,6 +161,28 @@ nav {
 
             thead {
                 text-align: left;
+
+                .header {
+                    cursor: pointer;
+                    font-weight: bold;
+                    &:before {
+                        content: "⇅ ";
+                    }
+                }
+
+                .headerSortDown {
+                    background-color: $rule-colour;
+                    &:before {
+                        content: "⇈ ";
+                    }
+                }
+
+                .headerSortUp {
+                    background-color: $rule-colour;
+                    &:before {
+                        content: "⇊ ";
+                    }
+                }
             }
 
             tr {
