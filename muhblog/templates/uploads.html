@@ -4,21 +4,23 @@
         <table>
             <thead>
                 <tr>
-                    <th>Filename</th>
-                    <th>Size</th>
-                    <th>Date Modified</th>
+                    <th id="name">Filename</th>
+                    <th id="size">Size</th>
+                    <th id="date">Date Modified</th>
                 </tr>
             </thead>
             <tbody>
                 {% for upload in files %}
                     <tr>
-                        <td>
+                        <td id="name">
                             <a href="{{ url_for(upload['view'], filename=upload['filename']) }}">
                                 {{ upload['filename'] }}
                             </a>
                         </td>
-                        <td>{{ upload['filesize'] | filesizeformat }}</td>
-                        <td>
+                        <td id="size">
+                            {{ upload['filesize'] | filesizeformat }}
+                        </td>
+                        <td id="date">
                             <time datetime="{{ upload['date'] }}">
                                 {{ upload['formatted_date'] }}
                             </time>
