@@ -5,7 +5,7 @@ import scss
 import flask
 
 from . import database
-from . import app, VIDEO_SUFFIXES, ENTRIES_PER_PAGE
+from . import app
 
 @app.route('/')
 @app.route('/page/<int:page>/')
@@ -13,8 +13,8 @@ def front(page=1):
     all_entries = database.connection \
         .execute('SELECT * FROM entries ORDER BY date DESC') \
         .fetchall()
-    end = page * ENTRIES_PER_PAGE
-    start = end - ENTRIES_PER_PAGE
+    end = page * app.config['BLOG_ENTRIES_PER_PAGE']
+    start = end - app.config['BLOG_ENTRIES_PER_PAGE']
     entries = all_entries[start:end]
     if not entries:
         flask.abort(404)
@@ -56,14 +56,14 @@ def archive(year=None, month=None, day=None):
 
     return flask.render_template('archive.html', title=title, entries=entries)
 
-@app.route('/tag/<tag_slug>/')
-def tag(tag_slug):
+@app.route('/tag/<slug>/')
+def tag(slug):
     entries = database.connection \
         .execute('SELECT entries.*, tags.name AS tag_name FROM entries '
                  'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
                  'JOIN tags ON entry_tags.tag_id = tags.ROWID '
                  'WHERE tags.slug = ? '
-                 'ORDER BY entries.date DESC', tag_slug) \
+                 'ORDER BY entries.date DESC', slug) \
         .fetchall()
     if not entries:
         flask.abort(404)
@@ -132,6 +132,7 @@ def uploads(filename=None):
 @app.route('/player/<path:filename>/')
 def player(filename):
     path = Path(app.config['BLOG_USER_UPLOADS_DIR'], filename)
-    return flask.render_template('player.html', filename=filename,
-                                 is_video=path.suffix in VIDEO_SUFFIXES,
-                                 title=filename)
+    return flask.render_template(
+        'player.html', filename=filename, title=filename,
+        is_video=path.suffix in app.config['BLOG_VIDEO_SUFFIXES'],
+    )

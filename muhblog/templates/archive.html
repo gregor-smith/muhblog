@@ -38,9 +38,9 @@
             {% for entry in entries %}
                 {% set year = entry['date'].year %}
                 {% set month = entry['date'].month %}
-                {% set month_padded = month | pad_date %}
+                {% set month_padded = month | pad_date_int %}
                 {% set day = entry['date'].day %}
-                {% set day_padded = day | pad_date %}
+                {% set day_padded = day | pad_date_int %}
                 {% if year < last_year %}
                     {% if last_year != 9999 %}
                                             </ul>

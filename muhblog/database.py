@@ -1,4 +1,3 @@
-import re
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -7,7 +6,7 @@ import flask
 from slugify import slugify
 
 from . import markdown
-from . import app, PLAYER_SUFFIXES, SNUB_LENGTH
+from . import app
 
 def convert_markup(bytes):
     return flask.Markup(str(bytes, encoding='utf-8'))
@@ -31,33 +30,20 @@ connection = sqlite3.connect(':memory:', factory=Connection,
 connection.row_factory = sqlite3.Row
 
 class Entry:
-    snub_regex = re.compile(r'<p>((?:(?!<\/p>).){{1,{}}}\.)'
-                                .format(SNUB_LENGTH),
-                            re.DOTALL)
-
     def __init__(self, path):
         self.path = path
 
         metadata, self.text = markdown.parse(self.path)
-        self.snub = self.snubify(self.text)
-
         self.title = metadata['title']
-        self.slug = slugify(self.title, max_length=100)
+        self.slug = slugify(self.title,
+                            max_length=app.config['BLOG_SLUG_LENGTH'])
         self.date = datetime.strptime(metadata['date'], '%Y-%m-%d %H:%M')
-
         self.tags = {slugify(tag): tag for tag in metadata['tags']}
         self.scripts = metadata.get('scripts', [])
 
-    @classmethod
-    def snubify(cls, text):
-        snub = cls.snub_regex.search(text) \
-            .group(1)
-        return '<p>{}</p>'.format(snub)
-
     def as_sql_args(self):
-        return {'text': self.text, 'snub': self.snub,
-                'title': self.title, 'slug': self.slug,
-                'date': self.date}
+        return {'text': self.text, 'title': self.title,
+                'slug': self.slug, 'date': self.date}
 
 class AboutPage(Entry):
     def __init__(self, path):
@@ -75,7 +61,9 @@ class Upload:
         self.filename = path.name
         self.filesize = stat.st_size
         self.date = datetime.fromtimestamp(stat.st_mtime)
-        self.view = 'player' if path.suffix in PLAYER_SUFFIXES else 'uploads'
+        self.view = ('player' if path.suffix in
+                     app.config['BLOG_PLAYER_SUFFIXES']
+                     else 'uploads')
 
     def as_sql_args(self):
         return {'filename': self.filename, 'filesize': self.filesize,
@@ -90,8 +78,8 @@ def create_and_populate():
         add_about(cursor)
 
 def create_tables(cursor):
-    cursor.execute('''CREATE TABLE entries (slug TEXT, title TEXT, text MARKUP,
-                                            snub MARKUP, date TIMESTAMP)''')
+    cursor.execute('''CREATE TABLE entries (text MARKUP, title TEXT,
+                                            slug TEXT, date TIMESTAMP)''')
     cursor.execute('CREATE TABLE tags (slug TEXT, name TEXT)')
     cursor.execute('''CREATE TABLE entry_tags (entry_id INT, tag_id INT)''')
     cursor.execute('CREATE TABLE scripts (url TEXT)')
@@ -106,8 +94,8 @@ def add_entries(cursor):
         if not path.is_file():
             continue
         entry = Entry(path)
-        cursor.execute('''INSERT INTO entries
-                          VALUES (:slug, :title, :text, :snub, :date)''',
+        cursor.execute('''INSERT INTO entries VALUES (:text, :title,
+                                                      :slug, :date)''',
                        **entry.as_sql_args())
         entry_id = cursor.lastrowid
         for slug, tag in entry.tags.items():

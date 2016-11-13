@@ -5,30 +5,30 @@
             <div class="front-entry">
                 {% set date = entry['date'] %}
                 <h1>
-                    <a href="{{ url_for('entry', year=date.year, month=date.month | pad_date, day=date.day | pad_date, slug=entry['slug']) }}">
+                    <a href="{{ url_for('entry', year=date.year, month=date.month | pad_date_int, day=date.day | pad_date_int, slug=entry['slug']) }}">
                         {{ entry['title'] }}
                     </a>
                 </h1>
                 <time class="date" datetime="{{ date }}">
                     {{ date | format_datetime }}
                 </time>
-                {{ entry['snub'] }}
+                {{ entry['text'] | snubify }}
             </div>
         {% endfor %}
         <div id="pages">
             {% if previous_page is none %}
-                << Previous
+                ⇇ Previous
             {% else %}
                 <a href="{{ url_for('front') if previous_page == 1 else url_for('front', page=previous_page) }}">
-                    << Previous
+                    ⇇ Previous
                 </a>
             {% endif %}
             — <strong>{{ page }}</strong> —
             {% if next_page is none %}
-                    Next >>
+                    Next ⇉
             {% else %}
                 <a href="{{ url_for('front', page=next_page) }}">
-                    Next >>
+                    Next ⇉
                 </a>
             {% endif %}
         </div>
