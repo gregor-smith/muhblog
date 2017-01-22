@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-from datetime import datetime
 
 import click
 import symlink
 
 from . import database
 from . import app, freezer, CONFIG_FILE
+
 
 @click.group()
 @click.option('--config-path', envvar='BLOG_CONFIG_PATH',
@@ -16,9 +16,11 @@ def main(config_path):
     app.config.from_json(config_path, silent=True)
     database.create_and_populate()
 
+
 @main.command()
 def freeze():
     freezer.freeze()
+
 
 @main.command()
 @click.argument('path', type=click.Path(exists=True, dir_okay=False))
@@ -44,6 +46,7 @@ def upload(path, overwrite, rename):
         print('hardlink created:', destination)
     else:
         print('copy created:', destination)
+
 
 @main.command()
 @click.option('--freeze', is_flag=True)

@@ -9,7 +9,7 @@
             <ul id="tags">
             {% for tag in tags %}
                 <li>
-                    <a href="{{ url_for('tag', slug=tag['slug']) }}">
+                    <a href="{{ url_for('archive', slug=tag['slug']) }}">
                         {{ tag['name'] }}
                     </a>
                 </li>

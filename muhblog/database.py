@@ -8,13 +8,15 @@ from slugify import slugify
 from . import markdown
 from . import app
 
+
 def convert_markup(bytes):
     return flask.Markup(str(bytes, encoding='utf-8'))
-sqlite3.register_converter('MARKUP', convert_markup)
+
 
 class Cursor(sqlite3.Cursor):
     def execute(self, sql, *args, **kwargs):
         return super().execute(sql, kwargs or tuple(args))
+
 
 class Connection(sqlite3.Connection):
     def cursor(self, factory=Cursor):
@@ -25,9 +27,6 @@ class Connection(sqlite3.Connection):
         cursor.execute(*args, **kwargs)
         return cursor
 
-connection = sqlite3.connect(':memory:', factory=Connection,
-                             detect_types=sqlite3.PARSE_DECLTYPES)
-connection.row_factory = sqlite3.Row
 
 class Entry:
     def __init__(self, path):
@@ -45,6 +44,7 @@ class Entry:
         return {'text': self.text, 'title': self.title,
                 'slug': self.slug, 'date': self.date}
 
+
 class AboutPage(Entry):
     def __init__(self, path):
         self.path = path
@@ -52,6 +52,7 @@ class AboutPage(Entry):
 
     def as_sql_args(self):
         return {'text': self.text}
+
 
 class Upload:
     def __init__(self, path):
@@ -69,6 +70,7 @@ class Upload:
         return {'filename': self.filename, 'filesize': self.filesize,
                 'date': self.date, 'view': self.view}
 
+
 def create_and_populate():
     cursor = connection.cursor()
     with connection:
@@ -76,6 +78,7 @@ def create_and_populate():
         add_entries(cursor)
         add_uploads(cursor)
         add_about(cursor)
+
 
 def create_tables(cursor):
     cursor.execute('''CREATE TABLE entries (text MARKUP, title TEXT,
@@ -88,6 +91,7 @@ def create_tables(cursor):
     cursor.execute('''CREATE TABLE uploads (filename TEXT, filesize INT,
                                             date TIMESTAMP, view TEXT)''')
     cursor.execute('CREATE TABLE about (text MARKUP)')
+
 
 def add_entries(cursor):
     for path in Path(app.config['BLOG_USER_ARCHIVE_DIR']).glob('*.md'):
@@ -108,6 +112,7 @@ def add_entries(cursor):
             cursor.execute('INSERT INTO entry_scripts VALUES (?, ?)',
                            entry_id, cursor.lastrowid)
 
+
 def add_uploads(cursor):
     for path in Path(app.config['BLOG_USER_UPLOADS_DIR']).iterdir():
         if not path.is_file():
@@ -116,6 +121,7 @@ def add_uploads(cursor):
         cursor.execute('''INSERT INTO uploads
                           VALUES (:filename, :filesize, :date, :view)''',
                        **upload.as_sql_args())
+
 
 def add_about(cursor):
     about_path = Path(app.config['BLOG_USER_STATIC_DIR'], 'about.md')
@@ -127,3 +133,9 @@ def add_about(cursor):
         text = markdown.markdown('No `about.md` could be found '
                                  'in `BLOG_USER_STATIC_DIR`')
         cursor.execute('INSERT INTO about VALUES (?)', text)
+
+
+sqlite3.register_converter('MARKUP', convert_markup)
+connection = sqlite3.connect(':memory:', factory=Connection,
+                             detect_types=sqlite3.PARSE_DECLTYPES)
+connection.row_factory = sqlite3.Row

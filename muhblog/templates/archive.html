@@ -1,84 +1,46 @@
 {% extends "base.html" %}
 
-{% macro entry_line(entry, year, month, day) %}
-    <li>
-        <h3>
-            <a href="{{ url_for('entry', year=year, month=month, day=day, slug=entry['slug']) }}">
-                {{ entry['title'] }}
-            </a>
-        </h3>
-    </li>
-{% endmacro %}
-
-{% macro day_lines(entry, year, month, day) %}
-    <a href="{{ url_for('archive', year=year, month=month, day=day) }}">
-        {{ day }}
-    </a>
-    <ul>
-        {{ entry_line(entry, year, month, day) }}
-{% endmacro %}
-
-{% macro month_lines(entry, year, month) %}
-    <ul>
-        <li>
-            <a href="{{ url_for('archive', year=year, month=month) }}">
-                {{ month }}
-            </a>
-            <ul>
-                <li>
-{% endmacro %}
-
-{% set last_year = 9999 %}
-{% set last_month = 99 %}
-{% set last_day = 99 %}
-
 {% block content %}
     <div id="archive">
         <ul>
-            {% for entry in entries %}
-                {% set year = entry['date'].year %}
-                {% set month = entry['date'].month %}
-                {% set month_padded = month | pad_date_int %}
-                {% set day = entry['date'].day %}
-                {% set day_padded = day | pad_date_int %}
-                {% if year < last_year %}
-                    {% if last_year != 9999 %}
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
+        {% for year, year_dict in entries.items() | sort(reverse=true) %}
+            <li>
+                <a href="{{ url_for('archive', year=year) }}">
+                    {{ year }}
+                </a>
+                <ul>
+                {% for month, month_dict in year_dict.items() | sort(reverse=true) %}
                     <li>
-                        <a href="{{ url_for('archive', year=year) }}">
-                            {{ year }}
+                        {% set padded_month = month | pad_date_int %}
+                        <a href="{{ url_for('archive', year=year, month=padded_month) }}">
+                            {{ padded_month }}
                         </a>
-                    {{ month_lines(entry, year, month_padded) }}
-                        {{ day_lines(entry, year, month_padded, day_padded) }}
-                    {% set last_year = year %}
-                    {% set last_month = month %}
-                    {% set last_day = day %}
-                {% elif month < last_month %}
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    {{ month_lines(entry, year, month_padded) }}
-                        {{ day_lines(entry, year, month_padded, day_padded) }}
-                    {% set last_month = month %}
-                    {% set last_day = day %}
-                {% elif day < last_day %}
+                        <ul>
+                        {% for day, entry_list in month_dict.items() | sort(reverse=true) %}
+                            <li>
+                                {% set padded_day = day | pad_date_int %}
+                                <a href="{{ url_for('archive', year=year, month=padded_month, day=padded_day) }}">
+                                    {{ padded_day }}
+                                </a>
+                                <ul>
+                                {% for entry in entry_list %}
+                                    <li>
+                                        <h3>
+                                            <a href="{{ url_for('entry', year=year, month=padded_month, day=padded_day, slug=entry['slug']) }}">
+                                                {{ entry['title'] }}
+                                            </a>
+                                        </h3>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </li>
+                        {% endfor %}
                         </ul>
                     </li>
-                    <li>
-                        {{ day_lines(entry, year, month_padded, day_padded) }}
-                    {% set last_day = day %}
-                {% elif day == last_day %}
-                    {{ entry_line(entry, year, month_padded, day_padded) }}
-                {% endif %}
-            {% endfor %}
+                {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
         </ul>
     </div>
 {% endblock %}

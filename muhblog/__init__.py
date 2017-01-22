@@ -11,6 +11,15 @@ WINDOWS = os.name == 'nt'
 APP_DIR = Path(click.get_app_dir('muhblog'))
 CONFIG_FILE = APP_DIR.joinpath('config.json')
 
+
+def snubify(text):
+    match = re.search(r'<p>((?:(?!<\/p>).){{1,{}}}\.)'
+                          .format(app.config['BLOG_SNUB_LENGTH']),
+                      text, re.DOTALL)
+    snub = match.group(1)
+    return flask.Markup('<p>{}</p>'.format(snub))
+
+
 app = flask.Flask(__name__)
 app.config['BLOG_TITLE'] = 'muhblog'
 app.config['BLOG_APP_DIR'] = os.fspath(APP_DIR)
@@ -25,13 +34,6 @@ app.config['BLOG_PLAYER_SUFFIXES'] = {'.ogg', '.mp3', '.m4a',
                                       *app.config['BLOG_VIDEO_SUFFIXES']}
 app.config['FREEZER_DESTINATION'] = os.fspath(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
-
-def snubify(text):
-    match = re.search(r'<p>((?:(?!<\/p>).){{1,{}}}\.)'
-                          .format(app.config['BLOG_SNUB_LENGTH']),
-                      text, re.DOTALL)
-    snub = match.group(1)
-    return flask.Markup('<p>{}</p>'.format(snub))
 
 app.jinja_env.filters['snubify'] = snubify
 app.jinja_env.filters['pad_date_int'] = functools.partial(str.format, '{:0>2}')

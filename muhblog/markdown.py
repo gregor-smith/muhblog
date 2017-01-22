@@ -10,7 +10,7 @@ class Renderer(mistune.Renderer):
         subbed = self.spoiler_regex.sub(self.spoiler_replacement, text)
         return super().paragraph(subbed)
 
-metadata_regex = re.compile(r'^([a-z]+): (.+)', re.IGNORECASE)
+
 def parse_metadata(text):
     split = text.split('\n')
     metadata = {}
@@ -29,10 +29,14 @@ def parse_metadata(text):
             else:
                 metadata[last_key] = last_value = [last_value, value]
 
-markdown = mistune.Markdown(renderer=Renderer())
+
 def parse(path, metadata=True):
     text = path.read_text(encoding='utf-8')
     if metadata:
-        metadata_dict, markdown_text = parse_metadata(text)
-        return metadata_dict, markdown(markdown_text)
+        metadata_dict, text = parse_metadata(text)
+        return metadata_dict, markdown(text)
     return markdown(text)
+
+
+metadata_regex = re.compile(r'^([a-z]+): (.+)', re.IGNORECASE)
+markdown = mistune.Markdown(renderer=Renderer())

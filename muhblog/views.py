@@ -1,4 +1,5 @@
 import io
+import collections
 from pathlib import Path
 
 import scss
@@ -6,6 +7,7 @@ import flask
 
 from . import database
 from . import app
+
 
 @app.route('/')
 @app.route('/page/<int:page>/')
@@ -28,11 +30,19 @@ def front(page=1):
 @app.route('/<year>/')
 @app.route('/<year>/<month>/')
 @app.route('/<year>/<month>/<day>/')
-def archive(year=None, month=None, day=None):
-    if year is None:
+@app.route('/tag/<slug>/')
+def archive(year=None, month=None, day=None, slug=None):
+    if slug is not None:
         entries = database.connection \
-            .execute('SELECT * FROM entries ORDER BY date DESC') \
+            .execute('SELECT entries.*, tags.name AS tag_name FROM entries '
+                     'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
+                     'JOIN tags ON entry_tags.tag_id = tags.ROWID '
+                     'WHERE tags.slug = ? ', slug) \
             .fetchall()
+        title = entries[0]['tag_name']
+    elif year is None:
+        entries = database.connection \
+            .execute('SELECT * FROM entries')
         title = 'archive'
     else:
         if day is not None:
@@ -46,29 +56,23 @@ def archive(year=None, month=None, day=None):
             title = year
         entries = database.connection \
             .execute('SELECT * FROM entries '
-                     'WHERE strftime(:format, date) = :desired '
-                     'ORDER BY date DESC',
-                     format=fmt, desired=title) \
-            .fetchall()
+                     'WHERE strftime(:format, date) = :desired ',
+                     format=fmt, desired=title)
 
-    if not entries:
+    grouped_entries = collections.defaultdict(
+        lambda: collections.defaultdict(
+            lambda: collections.defaultdict(list)
+        )
+    )
+    for entry in entries:
+        date = entry['date']
+        grouped_entries[date.year][date.month][date.day].append(entry)
+
+    if not grouped_entries:
         flask.abort(404)
 
-    return flask.render_template('archive.html', title=title, entries=entries)
-
-@app.route('/tag/<slug>/')
-def tag(slug):
-    entries = database.connection \
-        .execute('SELECT entries.*, tags.name AS tag_name FROM entries '
-                 'JOIN entry_tags ON entries.ROWID = entry_tags.entry_id '
-                 'JOIN tags ON entry_tags.tag_id = tags.ROWID '
-                 'WHERE tags.slug = ? '
-                 'ORDER BY entries.date DESC', slug) \
-        .fetchall()
-    if not entries:
-        flask.abort(404)
-    return flask.render_template('archive.html', entries=entries,
-                                 title=entries[0]['tag_name'])
+    return flask.render_template('archive.html', title=title,
+                                 entries=grouped_entries)
 
 @app.route('/<year>/<month>/<day>/<slug>/')
 def entry(slug, **kwargs):
