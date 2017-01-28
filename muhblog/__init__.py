@@ -30,7 +30,7 @@ app.config['BLOG_ENTRIES_PER_PAGE'] = 10
 app.config['BLOG_SNUB_LENGTH'] = 300
 app.config['BLOG_SLUG_LENGTH'] = 100
 app.config['BLOG_VIDEO_SUFFIXES'] = {'.mp4', '.webm'}
-app.config['BLOG_PLAYER_SUFFIXES'] = {'.ogg', '.mp3', '.m4a',
+app.config['BLOG_PLAYER_SUFFIXES'] = {'.ogg', '.mp3', '.m4a', '.flac',
                                       *app.config['BLOG_VIDEO_SUFFIXES']}
 app.config['FREEZER_DESTINATION'] = os.fspath(APP_DIR.joinpath('freeze'))
 app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*']
