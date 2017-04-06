@@ -17,7 +17,7 @@ def snubify(text):
                           .format(app.config['BLOG_SNUB_LENGTH']),
                       text, re.DOTALL)
     snub = match.group(1)
-    return flask.Markup('<p>{}</p>'.format(snub))
+    return flask.Markup(f'<p>{snub}</p>')
 
 
 app = flask.Flask(__name__)

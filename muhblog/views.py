@@ -26,6 +26,7 @@ def front(page=1):
         next_page=None if entries[-1] == all_entries[-1] else page + 1
     )
 
+
 @app.route('/archive/')
 @app.route('/<year>/')
 @app.route('/<year>/<month>/')
@@ -47,10 +48,10 @@ def archive(year=None, month=None, day=None, slug=None):
     else:
         if day is not None:
             fmt = '%d/%m/%Y'
-            title = '{}/{}/{}'.format(day, month, year)
+            title = f'{day}/{month}/{year}'
         elif month is not None:
             fmt = '%m/%Y'
-            title = '{}/{}'.format(month, year)
+            title = f'{month}/{year}'
         else:
             fmt = '%Y'
             title = year
@@ -74,6 +75,7 @@ def archive(year=None, month=None, day=None, slug=None):
     return flask.render_template('archive.html', title=title,
                                  entries=grouped_entries)
 
+
 @app.route('/<year>/<month>/<day>/<slug>/')
 def entry(slug, **kwargs):
     entry = database.connection \
@@ -94,12 +96,14 @@ def entry(slug, **kwargs):
     return flask.render_template('entry.html', tags=tags,
                                  scripts=scripts, **entry)
 
+
 @app.route('/about/')
 def about():
     about = database.connection \
         .execute('SELECT * from about') \
         .fetchone()
     return flask.render_template('about.html', title='about', **about)
+
 
 @app.route('/stylesheet.css')
 def stylesheet():
@@ -108,15 +112,18 @@ def stylesheet():
     file = io.BytesIO(bytes(css, encoding='utf-8'))
     return flask.send_file(file, mimetype='text/css')
 
+
 @app.route('/robots.txt')
 def robots_txt():
     return flask.send_from_directory(app.config['BLOG_USER_STATIC_DIR'],
                                      'robots.txt', mimetype='text/plain')
 
+
 @app.route('/favicon.png')
 def favicon():
     return flask.send_from_directory(app.config['BLOG_USER_STATIC_DIR'],
                                      'favicon.png', mimetype='image/png')
+
 
 @app.route('/uploads/')
 @app.route('/uploads/<path:filename>')
@@ -132,6 +139,7 @@ def uploads(filename=None):
                      flask.url_for('static', filename='sort.js')]
         )
     return flask.send_from_directory(uploads_directory, filename)
+
 
 @app.route('/player/<path:filename>/')
 def player(filename):

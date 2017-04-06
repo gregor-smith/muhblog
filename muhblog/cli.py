@@ -37,7 +37,7 @@ def upload(path, overwrite, rename):
         if overwrite:
             destination.unlink()
         else:
-            raise SystemExit('path already exists: {}'.format(destination))
+            raise SystemExit(f'path already exists: {destination}')
 
     link_type = symlink.link(destination, path, copy_fallback=True)
     if link_type is symlink.LinkType.symlink:

@@ -48,7 +48,7 @@ class Entry:
 class AboutPage(Entry):
     def __init__(self, path):
         self.path = path
-        self.text = markdown.parse(path, metadata=False)
+        metadata, self.text = markdown.parse(path)
 
     def as_sql_args(self):
         return {'text': self.text}
