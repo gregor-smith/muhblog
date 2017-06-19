@@ -22,7 +22,6 @@ def snubify(text):
 
 app = flask.Flask(__name__)
 app.config['BLOG_TITLE'] = 'muhblog'
-app.config['BLOG_APP_DIR'] = os.fspath(APP_DIR)
 app.config['BLOG_USER_ARCHIVE_DIR'] = os.fspath(APP_DIR.joinpath('archive'))
 app.config['BLOG_USER_UPLOADS_DIR'] = os.fspath(APP_DIR.joinpath('uploads'))
 app.config['BLOG_USER_STATIC_DIR'] = os.fspath(APP_DIR.joinpath('static'))

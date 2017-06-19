@@ -109,6 +109,8 @@ def about():
 def stylesheet():
     path = Path(app.static_folder, 'stylesheet.scss')
     css = scss.compiler.compile_file(path)
+    css = ('/* compiled from scss - see /static/stylesheet.scss '
+           'for legible version */\n\n\n') + css
     file = io.BytesIO(bytes(css, encoding='utf-8'))
     return flask.send_file(file, mimetype='text/css')
 

@@ -7,14 +7,14 @@
         <title>{{ BLOG_TITLE if title is none else
                   '{} | {}'.format(title, BLOG_TITLE) }}</title>
         <link rel="stylesheet" type="text/css"
-         href="//fonts.googleapis.com/css?family=Noto+Sans"/>
+         href="//fonts.googleapis.com/css?family=Droid+Sans:400,700"/>
         <link rel="stylesheet" type="text/css"
          href="{{ url_for('stylesheet') }}"/>
         <link rel="icon" type="image/png"
          href="{{ url_for('favicon') }}"/>
         {% if scripts %}
             {% for url in scripts %}
-                <script type="text/javascript" src={{ url }}></script>
+                <script type="text/javascript" src="{{ url }}"></script>
             {% endfor %}
         {% endif %}
     </head>
@@ -22,21 +22,39 @@
         <nav>
             <ul>
                 <li>
-                    <a href="{{ url_for('front') }}">{{ BLOG_TITLE }}</a>
+                    <a href="{{ url_for('front') }}">
+                        {{ BLOG_TITLE }}
+                    </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('about') }}">about</a>
+                    <a href="{{ url_for('about') }}">
+                        about
+                    </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('uploads') }}">uploads</a>
+                    <span class="separator">
+                        /
+                    </span>
                 </li>
                 <li>
-                    <a href="{{ url_for('archive') }}">archive</a>
+                    <a href="{{ url_for('uploads') }}">
+                        uploads
+                    </a>
+                </li>
+                <li>
+                    <span class="separator">
+                        /
+                    </span>
+                </li>
+                <li>
+                    <a href="{{ url_for('archive') }}">
+                        archive
+                    </a>
                 </li>
             </ul>
         </nav>
         <div id="content">
-        {% block content %}{% endblock %}
+            {% block content %}{% endblock %}
         </div>
     </body>
 </html>
