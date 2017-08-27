@@ -1,9 +1,7 @@
 import io
 import collections
 import math as maths
-from pathlib import Path
 
-import scss
 import flask
 import pkg_resources
 
@@ -143,6 +141,7 @@ def stylesheet():
     return send_configurable_file(filename='stylesheet.css',
                                   config_key='BLOG_STYLESHEET_PATH',
                                   mimetype='text/css')
+
 
 @blueprint.route('/robots.txt')
 def robots_txt():

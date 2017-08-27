@@ -159,7 +159,7 @@ nav {
 
 /* archive */
 #archive {
-    width: 800px
+    width: 800px;
 }
 
 #archive ul {
@@ -302,6 +302,18 @@ nav {
     cursor: default;
 }
 
-.expand-right {
-    margin-right: auto;
+.first-page-button:before {
+    content: "◀◀";
+}
+
+.last-page-button:before {
+    content: "▶▶";
+}
+
+.next-page-button:before {
+    content: "▶";
+}
+
+.previous-page-button:before {
+    content: "◀";
 }

@@ -24,20 +24,16 @@
     {% endfor %}
     <div id="pagination">
         {% if paginator.has_previous_page() %}
-            <a class="pagination-item no-highlight"
-                    href="{{ page_url(1) }}">
-                ◀◀
+            <a class="pagination-item no-highlight first-page-button"
+               href="{{ page_url(1) }}">
             </a>
-            <a class="pagination-item no-highlight"
-                    href="{{ page_url(paginator.current_page - 1) }}">
-                ◀
+            <a class="pagination-item no-highlight previous-page-button"
+               href="{{ page_url(paginator.current_page - 1) }}">
             </a>
         {% else %}
-            <span class="pagination-item no-highlight default-pointer">
-                ◀◀
+            <span class="pagination-item no-highlight default-pointer first-page-button">
             </span>
-            <span class="pagination-item no-highlight default-pointer">
-                ◀
+            <span class="pagination-item no-highlight default-pointer previous-page-button">
             </span>
         {% endif %}
 
@@ -53,20 +49,16 @@
         {% endfor %}
 
         {% if paginator.has_next_page() %}
-            <a class="pagination-item no-highlight"
-                    href="{{ page_url(paginator.current_page + 1) }}">
-                ▶
+            <a class="pagination-item no-highlight next-page-button"
+               href="{{ page_url(paginator.current_page + 1) }}">
             </a>
-            <a class="pagination-item no-highlight"
-                    href="{{ page_url(paginator.total_pages) }}">
-                ▶▶
+            <a class="pagination-item no-highlight last-page-button"
+               href="{{ page_url(paginator.total_pages) }}">
             </a>
         {% else %}
-            <span class="pagination-item no-highlight default-pointer">
-                ▶
+            <span class="pagination-item no-highlight default-pointer next-page-button">
             </span>
-            <span class="pagination-item no-highlight default-pointer">
-                ▶▶
+            <span class="pagination-item no-highlight default-pointer last-page-button">
             </span>
         {% endif %}
     </div>
