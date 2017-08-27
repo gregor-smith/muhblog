@@ -126,28 +126,27 @@ nav {
     width: 800px;
 }
 
+#entry header {
+    display: flex;
+    flex-direction: column;
+}
+
 #entry a, #about a {
     text-decoration: underline;
 }
 
 #entry .date, #about .date {
-    display: inline;
     margin: 5px;
-
-    line-height: 2;
 }
 
 #tags {
-    padding: 0 0 30px 0;
-    margin: 0;
-
+    display: flex;
+    flex-wrap: wrap;
     border-bottom: 1px solid #CCCCCC;
 }
 
-#tags li {
-    display: inline;
-    margin: 5px;
-
+#tags a {
+    margin: 0 5px;
     font-style: italic;
 }
 
@@ -194,7 +193,7 @@ nav {
     background-color: #EEEEEE;
 }
 
-#uploads .headerSortDown:before, .headerSortUp:before {
+#uploads .headerSortDown:before, #uploads .headerSortUp:before {
     color: #555555;
 }
 
@@ -258,7 +257,7 @@ nav {
 
     /* entries */
     #tags {
-        padding: 0 0 10px 0;
+        padding-bottom: 20px;
     }
 
     /* uploads */

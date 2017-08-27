@@ -8,15 +8,13 @@
         <time class="date" datetime="{{ entry.date | format_datetime_iso }}">
             {{ entry.date | format_datetime }}
         </time>
-        <ul id="tags">
+        <div id="tags">
         {% for tag in entry.tags %}
-            <li>
-                <a href="{{ tag.definition.url() }}">
-                    {{ tag.definition.name }}
-                </a>
-            </li>
+            <a href="{{ tag.definition.url() }}">
+                {{ tag.definition.name }}
+            </a>
         {% endfor %}
-        </ul>
+        </div>
     </header>
     <div id="text">
         {{ entry.convert_text() }}
