@@ -44,7 +44,7 @@ class FileTable {
         let element = <HTMLTableHeaderCellElement>document.getElementById(id);
         let header = new Header(element, sortKey);
         element.addEventListener("click", event => {
-            this.sortAndChangeClass(header, this.sortState === HeaderSortState.descending);
+            this.sortByNewHeader(header, this.sortState === HeaderSortState.descending);
         });
         this.headers.push(header);
         return header;
@@ -72,7 +72,7 @@ class FileTable {
         }
     }
 
-    sortAndChangeClass(sortHeader: Header, ascending: boolean) : void {
+    sortByNewHeader(sortHeader: Header, ascending: boolean) : void {
         for (let header of this.headers) {
             header.sortState = HeaderSortState.unsorted;
         }
@@ -81,7 +81,7 @@ class FileTable {
         this.sort(sortHeader, ascending);
     }
 
-    reSort() : void {
+    reSortSameHeader() : void {
         let sortedHeader = <Header>this.sortedHeader;
         this.sort(sortedHeader, sortedHeader.sortState === HeaderSortState.ascending);
     }
@@ -133,5 +133,5 @@ class Header {
 
 document.addEventListener("DOMContentLoaded", () => {
     let table = new FileTable();
-    table.reSort();
+    table.reSortSameHeader();
 });
