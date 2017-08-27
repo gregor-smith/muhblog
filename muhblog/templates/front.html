@@ -33,8 +33,8 @@
                 ◀
             </a>
         {% else %}
-            <span class="pagination-item double-arrow no-highlight">◀◀</span>
-            <span class="pagination-item no-highlight">◀</span>
+            <span class="pagination-item double-arrow no-highlight default-pointer">◀◀</span>
+            <span class="pagination-item no-highlight default-pointer">◀</span>
         {% endif %}
 
         {% for page in paginator.page_link_group() %}
@@ -58,8 +58,8 @@
                 ▶▶
             </a>
         {% else %}
-            <span class="pagination-item no-highlight">▶</span>
-            <span class="pagination-item double-arrow no-highlight">▶▶</span>
+            <span class="pagination-item no-highlight default-pointer">▶</span>
+            <span class="pagination-item double-arrow no-highlight default-pointer">▶▶</span>
         {% endif %}
     </div>
 </div>

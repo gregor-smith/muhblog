@@ -4,7 +4,6 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{{ BLOG_NAME if title is none else
                   '{} | {}'.format(title, BLOG_NAME) }}</title>
         <link rel="stylesheet" type="text/css"
@@ -21,38 +20,36 @@
     </head>
     <body>
         <nav>
-            <ul>
-                <li>
-                    <a href="{{ url_for('site.front') }}">
-                        {{ BLOG_NAME }}
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('site.about') }}">
-                        about
-                    </a>
-                </li>
-                <li>
-                    <span class="separator">
-                        /
-                    </span>
-                </li>
-                <li>
-                    <a href="{{ url_for('site.uploads') }}">
-                        uploads
-                    </a>
-                </li>
-                <li>
-                    <span class="separator">
-                        /
-                    </span>
-                </li>
-                <li>
-                    <a href="{{ url_for('site.archive') }}">
-                        archive
-                    </a>
-                </li>
-            </ul>
+            <div class="header-item">
+                <a href="{{ url_for('site.front') }}">
+                    {{ BLOG_NAME }}
+                </a>
+            </div>
+            <div class="header-item">
+                <a href="{{ url_for('site.archive') }}">
+                    archive
+                </a>
+            </div>
+            <div class="header-item">
+                <span class="no-highlight default-pointer">
+                    /
+                </span>
+            </div>
+            <div class="header-item">
+                <a href="{{ url_for('site.uploads') }}">
+                    uploads
+                </a>
+            </div>
+            <div class="header-item">
+                <span class="no-highlight default-pointer">
+                    /
+                </span>
+            </div>
+            <div class="header-item">
+                <a href="{{ url_for('site.about') }}">
+                    about
+                </a>
+            </div>
         </nav>
         <div id="content">
             {% block content %}
