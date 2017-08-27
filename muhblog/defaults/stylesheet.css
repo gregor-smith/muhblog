@@ -2,7 +2,6 @@
 body {
     display: flex;
     flex-direction: column;
-
     margin: 0;
     padding: 0;
 
@@ -22,32 +21,36 @@ a {
 nav {
     display: flex;
 
-    font-size: 40px;
+    font-size: 42px;
 
     background-color: #555555;
     color: #EEEEEE;
 }
 
-.header-item {
+.nav-item {
     display: flex;
-    margin: auto 0;
 }
 
-.header-item:first-child {
-    margin-left: 10px;
-    margin-right: auto;
-}
-
-.header-item:last-child {
-    margin-right: 10px;
-}
-
-.header-item a {
+.nav-item a {
     color: #EEEEEE;
+    padding: 22px;
 }
 
-.header-item a:hover {
+.nav-item a:hover {
+    transform: skew(20deg);
+}
+
+.nav-item:hover{
     background-color: #222222;
+    transform: skew(-20deg);
+}
+
+.nav-item:first-child {
+    margin-left: 10px;
+}
+
+.nav-item:last-child {
+    margin-right: 10px;
 }
 
 
@@ -142,11 +145,14 @@ nav {
 #tags {
     display: flex;
     flex-wrap: wrap;
+    padding-bottom: 40px;
+
     border-bottom: 1px solid #CCCCCC;
 }
 
 #tags a {
     margin: 0 5px;
+
     font-style: italic;
 }
 
@@ -243,14 +249,19 @@ nav {
         font-size: 18px;
     }
 
-    nav a {
-        padding: 6px 10px;
+    .nav-item a {
+        padding: 6px;
     }
 
-    nav .separator {
-        padding: 6px 4px;
+    .nav-item:first-child:hover {
+        transform: skew(20deg);
     }
 
+    .nav-item:first-child a:hover {
+        transform: skew(-20deg);
+    }
+
+    /* page widths */
     #front, #entry, #about, #archive, #uploads {
         width: 600px
     }
@@ -292,4 +303,8 @@ nav {
 
 .default-pointer {
     cursor: default;
+}
+
+.expand-right {
+    margin-right: auto;
 }

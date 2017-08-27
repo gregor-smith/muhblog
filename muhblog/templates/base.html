@@ -20,32 +20,22 @@
     </head>
     <body>
         <nav>
-            <div class="header-item">
+            <div class="nav-item expand-right">
                 <a href="{{ url_for('site.front') }}">
                     {{ BLOG_NAME }}
                 </a>
             </div>
-            <div class="header-item">
+            <div class="nav-item">
                 <a href="{{ url_for('site.archive') }}">
                     archive
                 </a>
             </div>
-            <div class="header-item">
-                <span class="no-highlight default-pointer">
-                    /
-                </span>
-            </div>
-            <div class="header-item">
+            <div class="nav-item">
                 <a href="{{ url_for('site.uploads') }}">
                     uploads
                 </a>
             </div>
-            <div class="header-item">
-                <span class="no-highlight default-pointer">
-                    /
-                </span>
-            </div>
-            <div class="header-item">
+            <div class="nav-item">
                 <a href="{{ url_for('site.about') }}">
                     about
                 </a>
