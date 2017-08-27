@@ -1,40 +1,67 @@
 {% extends "base.html" %}
+
+
+{% macro page_url(page) %}
+    {{ url_for('site.front', page=page) }}
+{% endmacro %}
+
 {% block content %}
-    <div id="front">
-        {% for entry in entries %}
-            <div class="front-entry">
-                {% set date = entry['date'] %}
-                <h1>
-                    <a href="{{ url_for('entry', year=date.year, month=date.month | pad_date_int, day=date.day | pad_date_int, slug=entry['slug']) }}">
-                        {{ entry['title'] }}
-                    </a>
-                </h1>
-                <time class="date" datetime="{{ date }}">
-                    {{ date | format_datetime }}
-                </time>
-                {{ entry['text'] | snubify }}
-            </div>
-        {% endfor %}
-        <div id="pages">
-            {% set previous_text = '◀ Prev' %}
-            {% if previous_page is none %}
-                {{ previous_text }}
-            {% else %}
-                <a href="{{ url_for('front') if previous_page == 1 else url_for('front', page=previous_page) }}">
-                    {{ previous_text }}
-                </a>
-            {% endif %}
 
-            — {{ page }} —
-
-            {% set next_text = 'Next ▶' %}
-            {% if next_page is none %}
-                {{ next_text }}
-            {% else %}
-                <a href="{{ url_for('front', page=next_page) }}">
-                    {{ next_text }}
+<div id="front">
+    {% for entry in paginator.get_pages() %}
+        <div class="front-entry">
+            <h1>
+                <a href="{{ entry.url() }}">
+                    {{ entry.title }}
                 </a>
-            {% endif %}
+            </h1>
+            <time class="date"
+                  datetime="{{ entry.date | format_datetime_iso }}">
+                {{ entry.date | format_datetime }}
+            </time>
+            {{ entry.convert_snub() }}
         </div>
+    {% endfor %}
+    <div id="pagination">
+        {% if paginator.has_previous_page() %}
+            <a class="pagination-item double-arrow no-highlight"
+                    href="{{ page_url(1) }}">
+                ◀◀
+            </a>
+            <a class="pagination-item no-highlight"
+                    href="{{ page_url(paginator.current_page - 1) }}">
+                ◀
+            </a>
+        {% else %}
+            <span class="pagination-item double-arrow no-highlight">◀◀</span>
+            <span class="pagination-item no-highlight">◀</span>
+        {% endif %}
+
+        {% for page in paginator.page_link_group() %}
+            {% if page == paginator.current_page %}
+                <span class="pagination-item page">{{ page }}</span>
+            {% else %}
+                <a class="pagination-item page"
+                        href="{{ page_url(page) }}">
+                    {{ page }}
+                </a>
+            {% endif %}
+        {% endfor %}
+
+        {% if paginator.has_next_page() %}
+            <a class="pagination-item no-highlight"
+                    href="{{ page_url(paginator.current_page + 1) }}">
+                ▶
+            </a>
+            <a class="pagination-item double-arrow no-highlight"
+                    href="{{ page_url(paginator.total_pages) }}">
+                ▶▶
+            </a>
+        {% else %}
+            <span class="pagination-item no-highlight">▶</span>
+            <span class="pagination-item double-arrow no-highlight">▶▶</span>
+        {% endif %}
     </div>
+</div>
+
 {% endblock %}

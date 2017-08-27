@@ -1,17 +1,17 @@
-{% set BLOG_TITLE = app_config['BLOG_TITLE'] %}
+{% set BLOG_NAME = config['BLOG_NAME'] %}
 
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
-        <title>{{ BLOG_TITLE if title is none else
-                  '{} | {}'.format(title, BLOG_TITLE) }}</title>
+        <title>{{ BLOG_NAME if title is none else
+                  '{} | {}'.format(title, BLOG_NAME) }}</title>
         <link rel="stylesheet" type="text/css"
          href="//fonts.googleapis.com/css?family=Droid+Sans:400,700"/>
         <link rel="stylesheet" type="text/css"
-         href="{{ url_for('stylesheet') }}"/>
+         href="{{ url_for('site.stylesheet') }}"/>
         <link rel="icon" type="image/png"
-         href="{{ url_for('favicon') }}"/>
+         href="{{ url_for('site.favicon') }}"/>
         {% if scripts %}
             {% for url in scripts %}
                 <script type="text/javascript" src="{{ url }}"></script>
@@ -22,12 +22,12 @@
         <nav>
             <ul>
                 <li>
-                    <a href="{{ url_for('front') }}">
-                        {{ BLOG_TITLE }}
+                    <a href="{{ url_for('site.front') }}">
+                        {{ BLOG_NAME }}
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('about') }}">
+                    <a href="{{ url_for('site.about') }}">
                         about
                     </a>
                 </li>
@@ -37,7 +37,7 @@
                     </span>
                 </li>
                 <li>
-                    <a href="{{ url_for('uploads') }}">
+                    <a href="{{ url_for('site.uploads') }}">
                         uploads
                     </a>
                 </li>
@@ -47,14 +47,15 @@
                     </span>
                 </li>
                 <li>
-                    <a href="{{ url_for('archive') }}">
+                    <a href="{{ url_for('site.archive') }}">
                         archive
                     </a>
                 </li>
             </ul>
         </nav>
         <div id="content">
-            {% block content %}{% endblock %}
+            {% block content %}
+            {% endblock %}
         </div>
     </body>
 </html>

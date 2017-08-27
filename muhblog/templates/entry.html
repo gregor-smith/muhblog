@@ -1,23 +1,26 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <div id="entry">
-        <header>
-            <h1>{{ title }}</h1>
-            <time class="date" datetime="{{ date }}">
-                {{ date | format_datetime }}
-            </time>
-            <ul id="tags">
-            {% for tag in tags %}
-                <li>
-                    <a href="{{ url_for('archive', slug=tag['slug']) }}">
-                        {{ tag['name'] }}
-                    </a>
-                </li>
-            {% endfor %}
-            </ul>
-        </header>
-        <div id="text">
-            {{ text }}
-        </div>
+
+<div id="entry">
+    <header>
+        <h1>{{ entry.title }}</h1>
+        <time class="date" datetime="{{ entry.date | format_datetime_iso }}">
+            {{ entry.date | format_datetime }}
+        </time>
+        <ul id="tags">
+        {% for tag in entry.tags %}
+            <li>
+                <a href="{{ tag.definition.url() }}">
+                    {{ tag.definition.name }}
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    </header>
+    <div id="text">
+        {{ entry.convert_text() }}
     </div>
+</div>
+
 {% endblock %}

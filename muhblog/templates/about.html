@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <div id="about">
-        {{ text }}
-    </div>
+
+<div id="about">
+    {{ entry.convert_text() }}
+</div>
+
 {% endblock %}

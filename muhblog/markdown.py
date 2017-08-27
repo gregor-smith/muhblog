@@ -1,7 +1,7 @@
 import re
 
+import flask
 import mistune
-
 
 metadata_regex = re.compile(r'^([a-z]+): (.+)', re.IGNORECASE)
 
@@ -42,10 +42,6 @@ def parse_metadata(text):
                 metadata[last_key] = last_value = [last_value, value]
 
 
-def parse(path):
-    text = path.read_text(encoding='utf-8')
-    metadata_dict, text = parse_metadata(text)
-    return metadata_dict, markdown(text)
-
-
-markdown = mistune.Markdown(renderer=Renderer())
+def convert(text):
+    parser = mistune.Markdown(renderer=Renderer())
+    return flask.Markup(parser(text))

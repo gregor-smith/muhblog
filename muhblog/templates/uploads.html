@@ -1,33 +1,36 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <div id="uploads">
-        <table>
-            <thead>
-                <tr>
-                    <th class="name">Filename</th>
-                    <th class="size">Size</th>
-                    <th class="modified headerSortUp">Date Modified</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for upload in files %}
-                    <tr>
-                        <td class="name">
-                            <a href="{{ url_for(upload['view'], filename=upload['filename']) }}">
-                                {{ upload['filename'] }}
-                            </a>
-                        </td>
-                        <td class="size" data-size="{{ upload['filesize'] }}">
-                            {{ upload['filesize'] | filesizeformat }}
-                        </td>
-                        <td class="modified">
-                            <time datetime="{{ upload['date'] | format_datetime_iso }}">
-                                {{ upload['date'] | format_datetime }}
-                            </time>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+<div id="uploads">
+    <table>
+        <thead>
+            <tr>
+                <th class="name">Filename</th>
+                <th class="size">Size</th>
+                <th class="modified headerSortUp">Date Modified</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for upload in files %}
+            <tr>
+                <td class="name">
+                    <a href="{{ upload.player_url() if upload.requires_player() else upload.url() }}">
+                        {{ upload.name }}
+                    </a>
+                </td>
+                <td class="size" data-size="{{ upload.size }}">
+                    {{ upload.size | filesizeformat }}
+                </td>
+                <td class="modified">
+                    <time datetime="{{ upload.date_modified | format_datetime_iso }}">
+                        {{ upload.date_modified | format_datetime }}
+                    </time>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 {% endblock %}

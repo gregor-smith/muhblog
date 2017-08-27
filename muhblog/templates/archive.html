@@ -1,46 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div id="archive">
-        <ul>
-        {% for year, year_dict in entries.items() | sort(reverse=true) %}
-            <li>
-                <a href="{{ url_for('archive', year=year) }}">
-                    {{ year }}
-                </a>
-                <ul>
-                {% for month, month_dict in year_dict.items() | sort(reverse=true) %}
-                    <li>
-                        {% set padded_month = month | pad_date_int %}
-                        <a href="{{ url_for('archive', year=year, month=padded_month) }}">
-                            {{ padded_month }}
-                        </a>
-                        <ul>
-                        {% for day, entry_list in month_dict.items() | sort(reverse=true) %}
-                            <li>
-                                {% set padded_day = day | pad_date_int %}
-                                <a href="{{ url_for('archive', year=year, month=padded_month, day=padded_day) }}">
-                                    {{ padded_day }}
-                                </a>
-                                <ul>
-                                {% for entry in entry_list %}
-                                    <li>
-                                        <h3>
-                                            <a href="{{ url_for('entry', year=year, month=padded_month, day=padded_day, slug=entry['slug']) }}">
-                                                {{ entry['title'] }}
-                                            </a>
-                                        </h3>
-                                    </li>
-                                {% endfor %}
-                                </ul>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    </li>
-                {% endfor %}
-                </ul>
-            </li>
-        {% endfor %}
-        </ul>
-    </div>
+
+<div id="archive">
+    <ul>
+    {% for year, year_dict in entries.items() | sort(reverse=true) %}
+        <li>
+            <a href="{{ url_for('site.archive', year=year) }}">
+                {{ year }}
+            </a>
+            <ul>
+            {% for month, month_dict in year_dict.items() | sort(reverse=true) %}
+                <li>
+                    {% set padded_month = '{:0>2}'.format(month) %}
+                    <a href="{{ url_for('site.archive', year=year, month=padded_month) }}">
+                        {{ padded_month }}
+                    </a>
+                    <ul>
+                    {% for day, entry_list in month_dict.items() | sort(reverse=true) %}
+                        <li>
+                            {% set padded_day = '{:0>2}'.format(day) %}
+                            <a href="{{ url_for('site.archive', year=year, month=padded_month, day=padded_day) }}">
+                                {{ padded_day }}
+                            </a>
+                            <ul>
+                            {% for entry in entry_list %}
+                                <li>
+                                    <h3>
+                                        <a href="{{ entry.url() }}">
+                                            {{ entry.title }}
+                                        </a>
+                                    </h3>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+
 {% endblock %}

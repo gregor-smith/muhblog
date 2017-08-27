@@ -1,9 +1,6 @@
 dist/
 build/
-test*/
-freeze/
+.vscode/
+.mypy_cache/
 *.pyc
 *.egg-info
-*.sublime-workspace
-*.sublime-project
-*.7z

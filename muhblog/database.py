@@ -1,141 +1,44 @@
-import sqlite3
-from pathlib import Path
-from datetime import datetime
-
-import flask
-from slugify import slugify
-
-from . import markdown
-from . import app
+import peewee
 
 
-def convert_markup(bytes):
-    return flask.Markup(str(bytes, encoding='utf-8'))
+class Database:
+    def __init__(self):
+        self._model_class = None
+        self._database = peewee.Proxy()
+
+    @property
+    def Model(self):
+        if self._model_class is None:
+            class ModelBase(peewee.Model):
+                class Meta:
+                    database = self._database
+            self._model_class = ModelBase
+        return self._model_class
+
+    def init_app(self, app):
+        sqlite = peewee.SqliteDatabase(
+            database=app.config['BLOG_DATABASE_PATH'],
+            journal_mode='WAL',
+            pragmas=[('foreign_keys', 'ON'),
+                     ('cache_size', app.config['BLOG_DATABASE_CACHE_SIZE'])]
+        )
+        self._database.initialize(sqlite)
+
+        app.before_request(self._connect_to_database)
+        app.teardown_request(self._close_database)
+
+    def _connect_to_database(self):
+        self._database.connect()
+
+    def _close_database(self, exception):
+        if not self._database.is_closed():
+            self._database.close()
+
+    def atomic(self):
+        return self._database.atomic()
+
+    def create_tables(self, *model_classes):
+        self._database.create_tables(model_classes)
 
 
-class Cursor(sqlite3.Cursor):
-    def execute(self, sql, *args, **kwargs):
-        return super().execute(sql, kwargs or tuple(args))
-
-
-class Connection(sqlite3.Connection):
-    def cursor(self, factory=Cursor):
-        return super().cursor(factory=factory)
-
-    def execute(self, *args, **kwargs):
-        cursor = self.cursor()
-        cursor.execute(*args, **kwargs)
-        return cursor
-
-
-class Entry:
-    def __init__(self, path):
-        self.path = path
-
-        metadata, self.text = markdown.parse(self.path)
-        self.title = metadata['title']
-        self.slug = slugify(self.title,
-                            max_length=app.config['BLOG_SLUG_LENGTH'])
-        self.date = datetime.strptime(metadata['date'], '%Y-%m-%d %H:%M')
-        self.tags = {slugify(tag): tag for tag in metadata['tags']}
-        self.scripts = metadata.get('scripts', [])
-
-    def as_sql_args(self):
-        return {'text': self.text, 'title': self.title,
-                'slug': self.slug, 'date': self.date}
-
-
-class AboutPage(Entry):
-    def __init__(self, path):
-        self.path = path
-        metadata, self.text = markdown.parse(path)
-
-    def as_sql_args(self):
-        return {'text': self.text}
-
-
-class Upload:
-    def __init__(self, path):
-        self.path = path
-        stat = path.stat()
-
-        self.filename = path.name
-        self.filesize = stat.st_size
-        self.date = datetime.fromtimestamp(stat.st_mtime)
-        self.view = ('player' if path.suffix in
-                     app.config['BLOG_PLAYER_SUFFIXES']
-                     else 'uploads')
-
-    def as_sql_args(self):
-        return {'filename': self.filename, 'filesize': self.filesize,
-                'date': self.date, 'view': self.view}
-
-
-def create_and_populate():
-    cursor = connection.cursor()
-    with connection:
-        create_tables(cursor)
-        add_entries(cursor)
-        add_uploads(cursor)
-        add_about(cursor)
-
-
-def create_tables(cursor):
-    cursor.execute('''CREATE TABLE entries (text MARKUP, title TEXT,
-                                            slug TEXT, date TIMESTAMP)''')
-    cursor.execute('CREATE TABLE tags (slug TEXT, name TEXT)')
-    cursor.execute('''CREATE TABLE entry_tags (entry_id INT, tag_id INT)''')
-    cursor.execute('CREATE TABLE scripts (url TEXT)')
-    cursor.execute('''CREATE TABLE entry_scripts (entry_id INT,
-                                                  script_id INT)''')
-    cursor.execute('''CREATE TABLE uploads (filename TEXT, filesize INT,
-                                            date TIMESTAMP, view TEXT)''')
-    cursor.execute('CREATE TABLE about (text MARKUP)')
-
-
-def add_entries(cursor):
-    for path in Path(app.config['BLOG_USER_ARCHIVE_DIR']).glob('*.md'):
-        if not path.is_file():
-            continue
-        entry = Entry(path)
-        cursor.execute('''INSERT INTO entries VALUES (:text, :title,
-                                                      :slug, :date)''',
-                       **entry.as_sql_args())
-        entry_id = cursor.lastrowid
-        for slug, tag in entry.tags.items():
-            cursor.execute('INSERT OR IGNORE INTO tags '
-                           'VALUES (?, ?)', slug, tag)
-            cursor.execute('INSERT INTO entry_tags VALUES (?, ?)',
-                           entry_id, cursor.lastrowid)
-        for script in entry.scripts:
-            cursor.execute('INSERT OR IGNORE INTO scripts VALUES (?)', script)
-            cursor.execute('INSERT INTO entry_scripts VALUES (?, ?)',
-                           entry_id, cursor.lastrowid)
-
-
-def add_uploads(cursor):
-    for path in Path(app.config['BLOG_USER_UPLOADS_DIR']).iterdir():
-        if not path.is_file():
-            continue
-        upload = Upload(path)
-        cursor.execute('''INSERT INTO uploads
-                          VALUES (:filename, :filesize, :date, :view)''',
-                       **upload.as_sql_args())
-
-
-def add_about(cursor):
-    about_path = Path(app.config['BLOG_USER_STATIC_DIR'], 'about.md')
-    if about_path.exists():
-        about = AboutPage(about_path)
-        cursor.execute('INSERT INTO about VALUES (:text)',
-                       **about.as_sql_args())
-    else:
-        text = markdown.markdown('No `about.md` could be found '
-                                 'in `BLOG_USER_STATIC_DIR`')
-        cursor.execute('INSERT INTO about VALUES (?)', text)
-
-
-sqlite3.register_converter('MARKUP', convert_markup)
-connection = sqlite3.connect(':memory:', factory=Connection,
-                             detect_types=sqlite3.PARSE_DECLTYPES)
-connection.row_factory = sqlite3.Row
+db = Database()
