@@ -128,16 +128,6 @@ def about():
                                  entry=AboutPage.get())
 
 
-@blueprint.route('/stylesheet.css')
-def stylesheet():
-    path = Path(blueprint.static_folder, 'stylesheet.scss')
-    css = scss.compiler.compile_file(path)
-    css = ('/* compiled from scss - see /static/stylesheet.scss '
-           'for legible version */\n\n\n') + css
-    file = io.BytesIO(bytes(css, encoding='utf-8'))
-    return flask.send_file(file, mimetype='text/css')
-
-
 def send_configurable_file(filename, config_key, mimetype):
     path = flask.current_app.config[config_key]
     if path is None:
@@ -147,6 +137,12 @@ def send_configurable_file(filename, config_key, mimetype):
             byts = file.read()
     return flask.send_file(io.BytesIO(byts), mimetype=mimetype)
 
+
+@blueprint.route('/stylesheet.css')
+def stylesheet():
+    return send_configurable_file(filename='stylesheet.css',
+                                  config_key='BLOG_STYLESHEET_PATH',
+                                  mimetype='text/css')
 
 @blueprint.route('/robots.txt')
 def robots_txt():

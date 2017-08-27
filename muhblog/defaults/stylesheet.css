@@ -1,0 +1,289 @@
+/* base styles */
+body {
+    margin: 0;
+    padding: 0;
+
+    font-family: Droid Sans, sans-serif;
+    font-size: 34px;
+
+    background-color: #EEEEEE;
+    color: #555555;
+}
+
+a {
+    text-decoration: none;
+}
+
+
+/* nav bar */
+nav {
+    font-size: 40px;
+}
+
+nav ul {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+
+    background-color: #555555;
+    list-style-type: none;
+}
+
+nav li {
+    float: right;
+}
+
+nav li:first-of-type {
+    float: left;
+}
+
+nav a, nav .separator {
+    display: block;
+    text-align: center;
+
+    color: #EEEEEE;
+}
+
+nav a {
+    padding: 20px 10px;
+}
+
+nav a:hover {
+    background-color: #222222;
+}
+
+nav .separator {
+    padding: 20px 4px;
+}
+
+
+/* content */
+#content {
+    margin: 0 auto;
+    padding: 40px;
+    max-width: 800px;
+
+    line-height: 1.6;
+    word-wrap: break-word;
+
+    background-color: #F7F7F7;
+    border: 1px solid #E1E1E1;
+}
+
+#content h1, #content h2, #content h3 {
+    line-height: 1.2;
+}
+
+#content a {
+    color: #777777;
+}
+
+#content a:visited, #content a:hover {
+    color: #222222;
+}
+
+.spoiler {
+    background-color: black;
+    color: black;
+}
+
+.spoiler:hover {
+    color: white;
+}
+
+.date {
+    font-style: italic;
+}
+
+
+/* front page */
+#front a {
+    color: #555555;
+}
+
+/*#front a:visited, #front a:hover {
+    color: #222222;
+}*/
+
+.entry-snub {
+    border-bottom: 1px solid #CCCCCC;
+}
+
+.entry-snub h1 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+#pagination {
+    flex-direction: row;
+    /*width: 800px;*/
+    margin: 5px auto;
+}
+
+#pagination .pagination-item  {
+    margin: auto 5px;
+}
+
+#pagination .pagination-item:first-child {
+    margin-left: auto;
+}
+
+#pagination .pagination-item:last-child  {
+    margin-right: auto;
+}
+
+
+/* entries, about page */
+#entry a, #about a {
+    text-decoration: underline;
+}
+
+#entry .date, #about .date {
+    display: inline;
+    margin: 5px;
+
+    line-height: 2;
+}
+
+#tags {
+    padding: 0 0 30px 0;
+    margin: 0;
+
+    border-bottom: 1px solid #CCCCCC;
+}
+
+#tags li {
+    display: inline;
+    margin: 5px;
+
+    font-style: italic;
+}
+
+
+/* uploads page */
+#uploads table {
+    width: 100%;
+    border-collapse: collapse;
+
+    font-size: 30px;
+}
+
+#uploads thead {
+    text-align: left;
+}
+
+#uploads .header {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#uploads .header:before {
+    content: "▲ ";
+    color: #F7F7F7;
+}
+
+#uploads .headerSortDown, .headerSortUp {
+    background-color: #EEEEEE;
+}
+
+#uploads .headerSortDown:before, .headerSortUp:before {
+    color: #555555;
+}
+
+#uploads .headerSortUp:before {
+    content: "▼ ";
+}
+
+#uploads tr {
+    border-bottom: 1px solid #CCCCCC;
+}
+
+#uploads td, #uploads th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#uploads td .name, #uploads th .name {
+    max-width: 400;
+}
+
+#uploads td .size, #uploads th .size {
+    max-width: 800 / 6;
+}
+
+#uploads td .modified, #uploads th .modified {
+    max-width: 800 / 3;
+}
+
+
+/* player page */
+#player {
+    display: block;
+    margin: 0 auto;
+}
+
+
+/* desktop sizes */
+@media only screen and (min-device-width: 601px) {
+    /* base styles */
+    body {
+        font-size: 16px;
+    }
+
+    /* nav bar */
+    nav {
+        font-size: 18px;
+    }
+
+    nav a {
+        padding: 6px 10px;
+    }
+
+    nav .separator {
+        padding: 6px 4px;
+    }
+
+    /* content */
+    #content {
+        max-width: 600px;
+    }
+
+    /* entries */
+    #tags {
+        padding: 0 0 10px 0;
+    }
+
+    /* uploads */
+    #uploads table {
+        font-size: 16px;
+    }
+
+    #uploads td .name, #uploads th .name {
+        max-width: 300;
+    }
+
+    #uploads td .size, #uploads th .size {
+        max-width: 100;
+    }
+
+    #uploads td .modified, #uploads th .modified {
+        max-width: 200;
+    }
+}
+
+
+/* overrides */
+.no-highlight {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+
+.default-pointer {
+    cursor: default;
+}
