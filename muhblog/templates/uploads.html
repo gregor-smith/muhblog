@@ -8,7 +8,7 @@
             <tr>
                 <th class="name">Filename</th>
                 <th class="size">Size</th>
-                <th class="modified headerSortUp">Date Modified</th>
+                <th class="date-modified headerSortUp">Date Modified</th>
             </tr>
         </thead>
         <tbody>
@@ -22,7 +22,7 @@
                 <td class="size" data-size="{{ upload.size }}">
                     {{ upload.size | filesizeformat }}
                 </td>
-                <td class="modified">
+                <td class="date-modified">
                     <time datetime="{{ upload.date_modified | format_datetime_iso }}">
                         {{ upload.date_modified | format_datetime }}
                     </time>

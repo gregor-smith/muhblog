@@ -171,18 +171,37 @@ nav {
 
 /* uploads page */
 #uploads {
-    width: 800px;
+    width: 100%;
 }
 
 #uploads table {
-    width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
 
-    font-size: 30px;
+    font-size: 34px;
 }
 
-#uploads thead {
+#uploads td, #uploads th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#uploads th {
     text-align: left;
+}
+
+#uploads tr {
+    border-bottom: 1px solid #CCCCCC;
+}
+
+#uploads th.size {
+    width: 20%;
+}
+
+#uploads th.date-modified {
+    width: 35%;
 }
 
 #uploads .header {
@@ -205,28 +224,6 @@ nav {
 
 #uploads .headerSortUp:before {
     content: "▼ ";
-}
-
-#uploads tr {
-    border-bottom: 1px solid #CCCCCC;
-}
-
-#uploads td, #uploads th {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#uploads td .name, #uploads th .name {
-    max-width: 400;
-}
-
-#uploads td .size, #uploads th .size {
-    max-width: 800 / 6;
-}
-
-#uploads td .modified, #uploads th .modified {
-    max-width: 800 / 3;
 }
 
 
@@ -253,6 +250,10 @@ nav {
         padding: 6px;
     }
 
+    .nav-item:first-child {
+        margin-right: auto;
+    }
+
     .nav-item:first-child:hover {
         transform: skew(20deg);
     }
@@ -276,16 +277,12 @@ nav {
         font-size: 16px;
     }
 
-    #uploads td .name, #uploads th .name {
-        max-width: 300;
+    #uploads th.size {
+        width: 15%;
     }
 
-    #uploads td .size, #uploads th .size {
-        max-width: 100;
-    }
-
-    #uploads td .modified, #uploads th .modified {
-        max-width: 200;
+    #uploads th.date-modified {
+        width: 25%;
     }
 }
 
