@@ -10,7 +10,10 @@ from . import markdown
 from .database import db
 
 
-class Model(db.Model):
+ModelBase = db.get_model_base_class()
+
+
+class Model(ModelBase):
     @classmethod
     def get_or_abort(cls, *args, status_code=404, **kwargs):
         try:
@@ -114,7 +117,7 @@ class Upload(Model):
 
 
 class TagDefinition(Model):
-    name = peewee.TextField(unique=True)
+    name = peewee.TextField()
     slug = peewee.TextField(unique=True)
 
     @classmethod

@@ -126,10 +126,10 @@ def about():
                                  entry=AboutPage.get())
 
 
-def send_configurable_file(filename, config_key, mimetype):
+def send_configurable_file(config_key, mimetype, fallback):
     path = flask.current_app.config[config_key]
     if path is None:
-        byts = pkg_resources.resource_string('muhblog', f'defaults/{filename}')
+        byts = pkg_resources.resource_string('muhblog', fallback)
     else:
         with open(path, mode='rb') as file:
             byts = file.read()
@@ -138,23 +138,23 @@ def send_configurable_file(filename, config_key, mimetype):
 
 @blueprint.route('/stylesheet.css')
 def stylesheet():
-    return send_configurable_file(filename='stylesheet.css',
-                                  config_key='BLOG_STYLESHEET_PATH',
-                                  mimetype='text/css')
+    return send_configurable_file(config_key='BLOG_STYLESHEET_PATH',
+                                  mimetype='text/css',
+                                  fallback='defaults/stylesheet.css')
 
 
 @blueprint.route('/robots.txt')
 def robots_txt():
-    return send_configurable_file(filename='robots.txt',
-                                  config_key='BLOG_ROBOTS_TXT_PATH',
-                                  mimetype='text/plain')
+    return send_configurable_file(config_key='BLOG_ROBOTS_TXT_PATH',
+                                  mimetype='text/plain',
+                                  fallback='defaults/robots.txt')
 
 
 @blueprint.route('/favicon.png')
 def favicon():
-    return send_configurable_file(filename='favicon.png',
-                                  config_key='BLOG_FAVICON_PATH',
-                                  mimetype='image/png')
+    return send_configurable_file(config_key='BLOG_FAVICON_PATH',
+                                  mimetype='image/png',
+                                  fallback='defaults/favicon.png')
 
 
 @blueprint.route('/uploads/')
@@ -166,9 +166,7 @@ def uploads(filename=None):
             .desc()
         return flask.render_template(
             'uploads.html', files=files, title='uploads',
-            scripts=[flask.url_for('static', filename='jquery.js'),
-                     flask.url_for('static', filename='tablesorter.js'),
-                     flask.url_for('static', filename='sort.js')]
+            scripts=[flask.url_for('static', filename='uploads.js')]
         )
     return Upload.get_or_abort(name=filename) \
         .send()

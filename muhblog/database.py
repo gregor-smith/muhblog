@@ -3,17 +3,13 @@ import peewee
 
 class Database:
     def __init__(self):
-        self._model_class = None
         self._database = peewee.Proxy()
 
-    @property
-    def Model(self):
-        if self._model_class is None:
-            class ModelBase(peewee.Model):
-                class Meta:
-                    database = self._database
-            self._model_class = ModelBase
-        return self._model_class
+    def get_model_base_class(self):
+        class ModelBase(peewee.Model):
+            class Meta:
+                database = self._database
+        return ModelBase
 
     def init_app(self, app):
         sqlite = peewee.SqliteDatabase(

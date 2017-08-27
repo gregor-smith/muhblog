@@ -2,5 +2,6 @@ dist/
 build/
 .vscode/
 .mypy_cache/
+*.js
 *.pyc
 *.egg-info

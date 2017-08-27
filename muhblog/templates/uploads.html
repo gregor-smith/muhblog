@@ -6,12 +6,12 @@
     <table>
         <thead>
             <tr>
-                <th class="name">Filename</th>
-                <th class="size">Size</th>
-                <th class="date-modified headerSortUp">Date Modified</th>
+                <th id="name">Filename</th>
+                <th id="size">Size</th>
+                <th id="date-modified" class="sort-descending">Date Modified</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="body">
         {% for upload in files %}
             <tr>
                 <td class="name">
