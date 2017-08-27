@@ -24,7 +24,7 @@
     {% endfor %}
     <div id="pagination">
         {% if paginator.has_previous_page() %}
-            <a class="pagination-item double-arrow no-highlight"
+            <a class="pagination-item no-highlight"
                     href="{{ page_url(1) }}">
                 ◀◀
             </a>
@@ -33,8 +33,12 @@
                 ◀
             </a>
         {% else %}
-            <span class="pagination-item double-arrow no-highlight default-pointer">◀◀</span>
-            <span class="pagination-item no-highlight default-pointer">◀</span>
+            <span class="pagination-item no-highlight default-pointer">
+                ◀◀
+            </span>
+            <span class="pagination-item no-highlight default-pointer">
+                ◀
+            </span>
         {% endif %}
 
         {% for page in paginator.page_link_group() %}
@@ -53,13 +57,17 @@
                     href="{{ page_url(paginator.current_page + 1) }}">
                 ▶
             </a>
-            <a class="pagination-item double-arrow no-highlight"
+            <a class="pagination-item no-highlight"
                     href="{{ page_url(paginator.total_pages) }}">
                 ▶▶
             </a>
         {% else %}
-            <span class="pagination-item no-highlight default-pointer">▶</span>
-            <span class="pagination-item double-arrow no-highlight default-pointer">▶▶</span>
+            <span class="pagination-item no-highlight default-pointer">
+                ▶
+            </span>
+            <span class="pagination-item no-highlight default-pointer">
+                ▶▶
+            </span>
         {% endif %}
     </div>
 </div>

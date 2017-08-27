@@ -1,5 +1,8 @@
 /* base styles */
 body {
+    display: flex;
+    flex-direction: column;
+
     margin: 0;
     padding: 0;
 
@@ -50,9 +53,10 @@ nav {
 
 /* content */
 #content {
-    margin: 0 auto;
+    display: flex;
+    width: fit-content;
     padding: 40px;
-    max-width: 800px;
+    margin: auto;
 
     line-height: 1.6;
     word-wrap: break-word;
@@ -88,13 +92,15 @@ nav {
 
 
 /* front page */
+#front {
+    display: flex;
+    flex-direction: column;
+    width: 800px;
+}
+
 #front a {
     color: #555555;
 }
-
-/*#front a:visited, #front a:hover {
-    color: #222222;
-}*/
 
 .entry-snub {
     border-bottom: 1px solid #CCCCCC;
@@ -107,24 +113,19 @@ nav {
 
 #pagination {
     flex-direction: row;
-    /*width: 800px;*/
-    margin: 5px auto;
+    margin: 20px auto auto auto;
 }
 
 #pagination .pagination-item  {
     margin: auto 5px;
 }
 
-#pagination .pagination-item:first-child {
-    margin-left: auto;
-}
-
-#pagination .pagination-item:last-child  {
-    margin-right: auto;
-}
-
 
 /* entries, about page */
+#entry, #about {
+    width: 800px;
+}
+
 #entry a, #about a {
     text-decoration: underline;
 }
@@ -151,7 +152,23 @@ nav {
 }
 
 
+/* archive */
+#archive {
+    width: 800px
+}
+
+#archive ul {
+    list-style-type: square;
+    padding: 0 25px;
+    margin: 0;
+}
+
+
 /* uploads page */
+#uploads {
+    width: 800px;
+}
+
 #uploads table {
     width: 100%;
     border-collapse: collapse;
@@ -235,9 +252,8 @@ nav {
         padding: 6px 4px;
     }
 
-    /* content */
-    #content {
-        max-width: 600px;
+    #front, #entry, #about, #archive, #uploads {
+        width: 600px
     }
 
     /* entries */
