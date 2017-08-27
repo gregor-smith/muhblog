@@ -5,7 +5,6 @@ from datetime import datetime
 import flask
 import peewee
 from slugify import slugify
-from playhouse.hybrid import hybrid_property
 
 from . import markdown
 from .database import db

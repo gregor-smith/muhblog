@@ -1,2 +1,3 @@
 recursive-include muhblog/static *
 recursive-include muhblog/templates *
+recursive-include muhblog/defaults *
