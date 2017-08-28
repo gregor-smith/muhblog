@@ -1,4 +1,4 @@
-class FileTable {
+class SortTable {
     element: HTMLTableElement;
     head: HTMLTableSectionElement;
     body: HTMLTableSectionElement;
@@ -124,7 +124,7 @@ class ColumnHeader {
     /** The underlying `<th>` element. */
     element: HTMLTableHeaderCellElement;
     /** Function used to compare rows.
-     *  See [[FileTable.initialiseColumnHeader]]. */
+     *  See [[SortTable.initialiseColumnHeader]]. */
     sortKey: ((row: HTMLTableRowElement) => any);
 
     constructor(element: HTMLTableHeaderCellElement,

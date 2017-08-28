@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let table = new FileTable("#uploads table");
+    let table = new SortTable("#uploads table");
     table.initialiseColumnHeader("#name", row => {
         let link = <HTMLLinkElement>row.querySelector(".name a");
         return link.innerText;
