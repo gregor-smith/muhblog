@@ -90,7 +90,10 @@ def archive(year=None, month=None, day=None, slug=None):
         entries = Entry.select()
         title = 'archive'
         if year is not None:
-            filter = Entry.date.year == int(year)
+            try:
+                filter = Entry.date.year == int(year)
+            except ValueError:
+                flask.abort(404)
             title = year
             if month is not None:
                 filter &= Entry.date.month == int(month)
@@ -158,14 +161,11 @@ def favicon():
 
 
 @blueprint.route('/uploads/')
-@blueprint.route('/uploads/<path:filename>')
+@blueprint.route('/uploads/<filename>')
 def uploads(filename=None):
     if filename is None:
-        files = Upload.select() \
-            .order_by(Upload.date_modified) \
-            .desc()
         return flask.render_template(
-            'uploads.html', files=files, title='uploads',
+            'uploads.html', files=Upload.select(), title='uploads',
             scripts=[flask.url_for('static', filename='sortable.js'),
                      flask.url_for('static', filename='uploads.js')]
         )
