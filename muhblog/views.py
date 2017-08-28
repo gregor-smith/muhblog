@@ -166,7 +166,8 @@ def uploads(filename=None):
             .desc()
         return flask.render_template(
             'uploads.html', files=files, title='uploads',
-            scripts=[flask.url_for('static', filename='uploads.js')]
+            scripts=[flask.url_for('static', filename='sortable.js'),
+                     flask.url_for('static', filename='uploads.js')]
         )
     return Upload.get_or_abort(name=filename) \
         .send()

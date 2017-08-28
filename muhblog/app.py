@@ -100,6 +100,11 @@ def create():
         print(f'freezing to {app.config["FREEZER_DESTINATION"]}')
         freezer.freeze()
 
+    @app.cli.command('run-frozen')
+    def run_frozen():
+        freezer = Freezer(app)
+        freezer.run()
+
     @app.cli.command()
     @click.argument('path', type=click.Path(exists=True, dir_okay=False))
     @click.option('--overwrite', is_flag=True)
