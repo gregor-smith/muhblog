@@ -59,7 +59,7 @@ class Entry(MarkdownModel):
 
     def convert_snub(self):
         length = flask.current_app.config['BLOG_SNUB_LENGTH_CHARACTERS']
-        snub = re.search(rf'^(.{{1,{length}}})[ \.\!\?]', self.text) \
+        snub = re.search(rf'^(.{{1,{length}}}[\.\!\?])', self.text) \
             .group(1)
         return markdown.convert(snub)
 
