@@ -1,13 +1,10 @@
 class FileTable {
     headers: Header[];
     body: HTMLTableSectionElement;
-    rows: HTMLTableRowElement[];
 
     constructor() {
         this.headers = [];
         this.body = <HTMLTableSectionElement>document.getElementById("body");
-        this.rows = Array.from(this.body.getElementsByTagName("tr"))
-            .map(row => <HTMLTableRowElement>row.cloneNode(true));
 
         this.initaliseHeader("name", row => {
             let link = <HTMLLinkElement>row.querySelector(".name a");
@@ -26,12 +23,8 @@ class FileTable {
     }
 
     get sortedHeader() : Header | null {
-        for (let header of this.headers) {
-            if (header.sortState !== HeaderSortState.unsorted) {
-                return header;
-            }
-        }
-        return null;
+        return this.headers.find(header => header.sortState !== HeaderSortState.unsorted)
+            || null;
     }
 
     get sortState() : HeaderSortState {
@@ -51,7 +44,10 @@ class FileTable {
     }
 
     sort(header: Header, ascending: boolean) : void {
-        this.rows.sort((rowA, rowB) => {
+        let rows = Array.from(this.body.getElementsByTagName("tr"))
+            .map(row => <HTMLTableRowElement>row);
+
+        rows.sort((rowA, rowB) => {
             let keyA = header.sortKey(rowA);
             let keyB = header.sortKey(rowB);
             if (keyA === keyB) {
@@ -66,16 +62,14 @@ class FileTable {
         while (this.body.firstChild) {
             this.body.removeChild(this.body.firstChild);
         }
-        for (let row of this.rows) {
+        rows.forEach(row => {
             let clone = row.cloneNode(true);
             this.body.appendChild(clone);
-        }
+        });
     }
 
     sortByNewHeader(sortHeader: Header, ascending: boolean) : void {
-        for (let header of this.headers) {
-            header.sortState = HeaderSortState.unsorted;
-        }
+        this.headers.forEach(header => header.sortState = HeaderSortState.unsorted);
         sortHeader.sortState = ascending ? HeaderSortState.ascending
             : HeaderSortState.descending;
         this.sort(sortHeader, ascending);
