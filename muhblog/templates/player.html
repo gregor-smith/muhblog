@@ -2,10 +2,12 @@
 
 {% block content %}
 
+<div class="content" id="player">
 {% if upload.is_video() %}
-    <video id="player" src="{{ upload.url() }}" controls/>
+    <video id="media" src="{{ upload.url() }}" controls/>
 {% else %}
-    <audio id="player" src="{{ upload.url() }}" controls/>
+    <audio id="media" src="{{ upload.url() }}" controls/>
 {% endif %}
+</div>
 
 {% endblock %}
