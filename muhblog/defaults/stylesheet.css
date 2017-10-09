@@ -126,6 +126,11 @@ nav {
     text-decoration: underline;
 }
 
+#entry pre {
+    overflow: auto;
+    background-color: #EEEEEE;
+}
+
 #entry .date, #about .date {
     margin: 5px;
 }
@@ -270,7 +275,7 @@ nav {
 
     /* page widths */
     #front, #entry, #about, #archive, #uploads {
-        width: 600px
+        width: 800px
     }
 
     /* front */
@@ -285,6 +290,10 @@ nav {
 
     #uploads {
         margin: auto;
+    }
+
+    #entry pre {
+        font-size: 14px;
     }
 
     /* uploads */
