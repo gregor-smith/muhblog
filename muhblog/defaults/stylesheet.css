@@ -126,9 +126,12 @@ nav {
     text-decoration: underline;
 }
 
+#entry pre, #entry code {
+    background-color: #EEEEEE;
+}
+
 #entry pre {
     overflow: auto;
-    background-color: #EEEEEE;
 }
 
 #entry .date, #about .date {
@@ -292,8 +295,12 @@ nav {
         margin: auto;
     }
 
-    #entry pre {
+    #entry pre, #entry code {
         font-size: 14px;
+    }
+
+    #entry h2 code {
+        font-size: inherit;
     }
 
     /* uploads */

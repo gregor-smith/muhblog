@@ -1,63 +1,13 @@
-import io
 import collections
-import math as maths
 
 import flask
-import pkg_resources
 
-from .models import Entry, Upload, TagDefinition, TagMapping, AboutPage
+from .models import Entry, TagDefinition, TagMapping, AboutPage
+from .utils import send_configurable_file, Paginator
 
 blueprint = flask.Blueprint(name='site', import_name=__name__,
                             static_folder='static',
                             template_folder='templates')
-
-
-class Paginator:
-    def __init__(self, query, current_page):
-        self.query = query
-        self.current_page = current_page
-        self.total_posts = self.query.count()
-
-    def get_pages(self, page=None):
-        return self.query.paginate(
-            page or self.current_page,
-            flask.current_app.config['BLOG_ENTRIES_PER_PAGE']
-        )
-
-    @property
-    def total_pages(self):
-        per_page = flask.current_app.config['BLOG_ENTRIES_PER_PAGE']
-        return maths.ceil(self.total_posts / per_page)
-
-    def has_previous_page(self):
-        return self.current_page != 1
-
-    def has_next_page(self):
-        return self.current_page != self.total_pages
-
-    def page_link_group(self, start=1, group_size=5):
-        end = self.total_pages
-
-        if end - start <= group_size:
-            return range(start, end + 1)
-
-        padding = group_size // 2
-        group_start = self.current_page - padding
-        group_end = self.current_page + padding
-
-        if group_start < start:
-            end_extra = start - group_start
-            group_start = start
-        else:
-            end_extra = 0
-
-        if group_end > end:
-            start_extra = (0 if end_extra != 0 else (group_end - end))
-            group_end = end
-        else:
-            start_extra = 0
-
-        return range(group_start - start_extra, group_end + end_extra + 1)
 
 
 @blueprint.route('/', defaults={'page': 1})
@@ -91,18 +41,18 @@ def archive(year=None, month=None, day=None, slug=None):
         title = 'archive'
         if year is not None:
             try:
-                filter = Entry.date.year == int(year)
+                filtr = Entry.date.year == int(year)
             except ValueError:
                 flask.abort(404)
             title = year
             if month is not None:
-                filter &= Entry.date.month == int(month)
+                filtr &= Entry.date.month == int(month)
                 title = f'{month}/{year}'
                 if day is not None:
-                    filter &= Entry.date.day == int(day)
+                    filtr &= Entry.date.day == int(day)
                     title = f'{day}/{month}/{year}'
             entries = Entry.select() \
-                .where(filter)
+                .where(filtr)
 
     groups = collections.defaultdict(
         lambda: collections.defaultdict(
@@ -118,8 +68,16 @@ def archive(year=None, month=None, day=None, slug=None):
 
 
 @blueprint.route('/<year>/<month>/<day>/<slug>/')
-def entry(slug, **kwargs):
-    entry = Entry.get_or_abort(slug=slug)
+def entry(year, month, day, slug):
+    try:
+        entry = Entry.get(
+            Entry.date.year == int(year),
+            Entry.date.month == int(month),
+            Entry.date.day == int(day),
+            Entry.slug == slug
+        )
+    except (ValueError, Entry.DoesNotExist):
+        flask.abort(404)
     return flask.render_template('entry.html', entry=entry, title=entry.title)
 
 
@@ -127,16 +85,6 @@ def entry(slug, **kwargs):
 def about():
     return flask.render_template('about.html', title='about',
                                  entry=AboutPage.get())
-
-
-def send_configurable_file(config_key, mimetype, fallback):
-    path = flask.current_app.config[config_key]
-    if path is None:
-        byts = pkg_resources.resource_string('muhblog', fallback)
-    else:
-        with open(path, mode='rb') as file:
-            byts = file.read()
-    return flask.send_file(io.BytesIO(byts), mimetype=mimetype)
 
 
 @blueprint.route('/stylesheet.css')
@@ -158,25 +106,3 @@ def favicon():
     return send_configurable_file(config_key='BLOG_FAVICON_PATH',
                                   mimetype='image/png',
                                   fallback='defaults/favicon.png')
-
-
-@blueprint.route('/uploads/')
-@blueprint.route('/uploads/<filename>')
-def uploads(filename=None):
-    if filename is None:
-        return flask.render_template(
-            'uploads.html', files=Upload.select(), title='uploads',
-            scripts=[flask.url_for('static', filename='sortable.js'),
-                     flask.url_for('static', filename='uploads.js')]
-        )
-    return Upload.get_or_abort(name=filename) \
-        .send()
-
-
-@blueprint.route('/player/<path:filename>/')
-def player(filename):
-    upload = Upload.get_or_abort(name=filename)
-    if not upload.requires_player():
-        flask.abort(404)
-    return flask.render_template('player.html', title=upload.name,
-                                 upload=upload)

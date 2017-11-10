@@ -11,14 +11,16 @@ class Renderer(mistune.Renderer):
     spoiler_replacement = r'<span class="spoiler">\1</span>'
 
     def paragraph(self, text):
-        subbed = self.spoiler_regex.sub(self.spoiler_replacement, text)
-        return super().paragraph(subbed)
+        replaced = self.spoiler_regex.sub(self.spoiler_replacement, text)
+        return super().paragraph(replaced)
 
 
 def parse_metadata(text):
     split = text.split('\n')
     metadata = {}
 
+    # text is returned as-is if the first non-whitespace line doesn't match
+    # the metadata regex (meaning the file has no metadata)
     for index, line in enumerate(split):
         if line and not line.isspace():
             if not metadata_regex.search(line):
@@ -29,6 +31,8 @@ def parse_metadata(text):
 
     for index, line in enumerate(split[index:]):
         if not line or line.isspace():
+            # return on the first all whitespace line,
+            # as this marks the end of the metadata block
             return metadata, '\n'.join(split[index + 1:])
         match = metadata_regex.search(line)
         if match:
@@ -44,4 +48,5 @@ def parse_metadata(text):
 
 def convert(text):
     parser = mistune.Markdown(renderer=Renderer())
-    return flask.Markup(parser(text))
+    html = parser(text)
+    return flask.Markup(html)

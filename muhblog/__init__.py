@@ -1,3 +1,3 @@
-from .app import create
+from . import wsgi
 
-app = create()
+app = wsgi.create()

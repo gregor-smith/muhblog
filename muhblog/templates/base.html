@@ -10,11 +10,6 @@
          href="{{ url_for('site.stylesheet') }}"/>
         <link rel="icon" type="image/png"
          href="{{ url_for('site.favicon') }}"/>
-        {% if scripts %}
-            {% for url in scripts %}
-                <script type="text/javascript" src="{{ url }}"></script>
-            {% endfor %}
-        {% endif %}
     </head>
     <body>
         <nav>
@@ -26,11 +21,6 @@
             <div class="nav-item">
                 <a href="{{ url_for('site.archive') }}">
                     archive
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('site.uploads') }}">
-                    uploads
                 </a>
             </div>
             <div class="nav-item">

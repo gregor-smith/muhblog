@@ -15,8 +15,7 @@ class Database:
         sqlite = peewee.SqliteDatabase(
             database=app.config['BLOG_DATABASE_PATH'],
             journal_mode='WAL',
-            pragmas=[('foreign_keys', 'ON'),
-                     ('cache_size', app.config['BLOG_DATABASE_CACHE_SIZE'])]
+            pragmas=[('foreign_keys', 'ON')]
         )
         self._database.initialize(sqlite)
 
