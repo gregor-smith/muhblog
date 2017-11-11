@@ -218,7 +218,7 @@ nav a:first-child {
         font-size: 24px;
     }
 
-    .pagination {
+    #pagination {
         margin: 20px auto;
         font-size: 18px;
     }
