@@ -1,7 +1,7 @@
 {% set BLOG_NAME = config['BLOG_NAME'] %}
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8">
         <title>{{ BLOG_NAME if title is none else
@@ -11,25 +11,25 @@
         <link rel="icon" type="image/png"
          href="{{ url_for('site.favicon') }}"/>
     </head>
-    <body>
-        <nav>
-            <div class="nav-item">
+    <body class="flex column">
+        <nav class="flex">
+            <div class="flex centred">
                 <a href="{{ url_for('site.front') }}">
                     {{ BLOG_NAME }}
                 </a>
-            </div>
-            <div class="nav-item">
                 <a href="{{ url_for('site.archive') }}">
                     archive
                 </a>
-            </div>
-            <div class="nav-item">
                 <a href="{{ url_for('site.about') }}">
                     about
                 </a>
             </div>
         </nav>
-        {% block content %}
-        {% endblock %}
+        <main class="flex">
+            <div class="flex centred column" id="content">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </main>
     </body>
 </html>

@@ -5,63 +5,65 @@
     {{ url_for('site.front', page=page) }}
 {% endmacro %}
 
+
 {% block content %}
 
-<div class="content" id="front">
-    {% for entry in paginator.get_entries() %}
-        <div class="entry-snub">
+{% for entry in paginator.get_entries() %}
+    <article class="front-entry">
+        <header>
             <h1>
                 <a href="{{ entry.url() }}">
                     {{ entry.title }}
                 </a>
             </h1>
-            <time class="date"
-                  datetime="{{ entry.date | format_datetime_iso }}">
+            <time datetime="{{ entry.date | format_datetime_iso }}">
                 {{ entry.date | format_datetime }}
             </time>
+        </header>
+        <section id="snub">
             {{ entry.convert_snub() }}
-        </div>
+        </section>
+    </article>
+{% endfor %}
+
+<div class="flex" id="pagination">
+    {% if paginator.has_previous_page() %}
+        <a class="no-highlight first-page-button"
+            href="{{ page_url(1) }}">
+        </a>
+        <a class="no-highlight previous-page-button"
+            href="{{ page_url(paginator.current_page - 1) }}">
+        </a>
+    {% else %}
+        <span class="no-highlight default-pointer first-page-button">
+        </span>
+        <span class="no-highlight default-pointer previous-page-button">
+        </span>
+    {% endif %}
+
+    {% for page in paginator.page_link_group() %}
+        {% if page == paginator.current_page %}
+            <span class="page">{{ page }}</span>
+        {% else %}
+            <a class="page" href="{{ page_url(page) }}">
+                {{ page }}
+            </a>
+        {% endif %}
     {% endfor %}
-    <div id="pagination">
-        {% if paginator.has_previous_page() %}
-            <a class="pagination-item no-highlight first-page-button"
-               href="{{ page_url(1) }}">
-            </a>
-            <a class="pagination-item no-highlight previous-page-button"
-               href="{{ page_url(paginator.current_page - 1) }}">
-            </a>
-        {% else %}
-            <span class="pagination-item no-highlight default-pointer first-page-button">
-            </span>
-            <span class="pagination-item no-highlight default-pointer previous-page-button">
-            </span>
-        {% endif %}
 
-        {% for page in paginator.page_link_group() %}
-            {% if page == paginator.current_page %}
-                <span class="pagination-item page">{{ page }}</span>
-            {% else %}
-                <a class="pagination-item page"
-                        href="{{ page_url(page) }}">
-                    {{ page }}
-                </a>
-            {% endif %}
-        {% endfor %}
-
-        {% if paginator.has_next_page() %}
-            <a class="pagination-item no-highlight next-page-button"
-               href="{{ page_url(paginator.current_page + 1) }}">
-            </a>
-            <a class="pagination-item no-highlight last-page-button"
-               href="{{ page_url(paginator.total_pages()) }}">
-            </a>
-        {% else %}
-            <span class="pagination-item no-highlight default-pointer next-page-button">
-            </span>
-            <span class="pagination-item no-highlight default-pointer last-page-button">
-            </span>
-        {% endif %}
-    </div>
+    {% if paginator.has_next_page() %}
+        <a class="no-highlight next-page-button"
+            href="{{ page_url(paginator.current_page + 1) }}">
+        </a>
+        <a class="no-highlight last-page-button"
+            href="{{ page_url(paginator.total_pages()) }}">
+        </a>
+    {% else %}
+        <span class="no-highlight default-pointer next-page-button">
+        </span>
+        <span class="no-highlight default-pointer last-page-button">
+        </span>
+    {% endif %}
 </div>
 
 {% endblock %}
