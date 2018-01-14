@@ -2,7 +2,7 @@
 
 
 {% macro page_url(page) %}
-    {{ url_for('site.front', page=page) }}
+    {{- url_for('site.front', page=page) -}}
 {% endmacro %}
 
 
@@ -20,7 +20,7 @@
                 {{ entry.date | format_datetime }}
             </time>
         </header>
-        <section id="snub">
+        <section class="snub">
             {{ entry.convert_snub() }}
         </section>
     </article>
@@ -29,10 +29,10 @@
 <div class="flex" id="pagination">
     {% if paginator.has_previous_page() %}
         <a class="no-highlight first-page-button"
-            href="{{ page_url(1) }}">
+           href="{{ page_url(1) }}">
         </a>
         <a class="no-highlight previous-page-button"
-            href="{{ page_url(paginator.current_page - 1) }}">
+           href="{{ page_url(paginator.current_page - 1) }}">
         </a>
     {% else %}
         <span class="no-highlight default-pointer first-page-button">
@@ -53,10 +53,10 @@
 
     {% if paginator.has_next_page() %}
         <a class="no-highlight next-page-button"
-            href="{{ page_url(paginator.current_page + 1) }}">
+           href="{{ page_url(paginator.current_page + 1) }}">
         </a>
         <a class="no-highlight last-page-button"
-            href="{{ page_url(paginator.total_pages()) }}">
+           href="{{ page_url(paginator.total_pages()) }}">
         </a>
     {% else %}
         <span class="no-highlight default-pointer next-page-button">

@@ -100,7 +100,7 @@ nav a:first-child {
     margin: 0;
 }
 
-.front-entry #snub {
+.front-entry .snub {
     padding: 15px 0 10px 0;
 }
 
@@ -109,7 +109,7 @@ nav a:first-child {
     color: #222222;
 }
 
-.front-entry #snub a:hover {
+.front-entry .snub a:hover {
     text-decoration: underline;
 }
 
@@ -186,6 +186,10 @@ nav a:first-child {
 
 
 /* archive */
+#archive {
+    margin: 25px;
+}
+
 #archive li {
     list-style-type: square;
 }

@@ -3,7 +3,7 @@ import collections
 import flask
 
 from .models import Entry, TagDefinition, TagMapping, AboutPage
-from .utils import send_configurable_file, Paginator
+from .utils import send_configurable_file, Paginator, render_template
 
 blueprint = flask.Blueprint(name='site', import_name=__name__,
                             static_folder='static',
@@ -17,8 +17,8 @@ def front(page):
         .order_by(Entry.date.desc())
     if not entries.count():
         flask.abort(404)
-    return flask.render_template('front.html', title=None,
-                                 paginator=Paginator(entries, page))
+    return render_template('front.html', title=None,
+                           paginator=Paginator(entries, page))
 
 
 @blueprint.route('/archive/')
@@ -64,7 +64,7 @@ def archive(year=None, month=None, day=None, slug=None):
 
     if not groups:
         flask.abort(404)
-    return flask.render_template('archive.html', title=title, entries=groups)
+    return render_template('archive.html', title=title, entries=groups)
 
 
 @blueprint.route('/<year>/<month>/<day>/<slug>/')
@@ -78,13 +78,12 @@ def entry(year, month, day, slug):
         )
     except (ValueError, Entry.DoesNotExist):
         flask.abort(404)
-    return flask.render_template('entry.html', entry=entry, title=entry.title)
+    return render_template('entry.html', entry=entry, title=entry.title)
 
 
 @blueprint.route('/about/')
 def about():
-    return flask.render_template('about.html', title='about',
-                                 entry=AboutPage.get())
+    return render_template('about.html', title='about', entry=AboutPage.get())
 
 
 @blueprint.route('/stylesheet.css')

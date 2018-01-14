@@ -3,6 +3,7 @@ import math as maths
 
 import flask
 import pkg_resources
+from htmlmin.minify import html_minify
 
 
 class Paginator:
@@ -60,3 +61,8 @@ def send_configurable_file(config_key, mimetype, fallback):
         with open(path, mode='rb') as file:
             byts = file.read()
     return flask.send_file(io.BytesIO(byts), mimetype=mimetype)
+
+
+def render_template(*args, **kwargs):
+    html = flask.render_template(*args, **kwargs)
+    return html_minify(html)

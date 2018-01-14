@@ -7,9 +7,9 @@
         <title>{{ BLOG_NAME if title is none else
                   '{} | {}'.format(title, BLOG_NAME) }}</title>
         <link rel="stylesheet" type="text/css"
-         href="{{ url_for('site.stylesheet') }}"/>
+              href="{{ url_for('site.stylesheet') }}"/>
         <link rel="icon" type="image/png"
-         href="{{ url_for('site.favicon') }}"/>
+              href="{{ url_for('site.favicon') }}"/>
     </head>
     <body class="flex column">
         <nav class="flex">
