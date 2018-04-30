@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+click = "*"
+flask = "*"
+python-slugify = "*"
+peewee = "*"
+mistune = "*"
+frozen-flask = "*"
+django-htmlmin = "*"
+python-dotenv = "*"
+
+[dev-packages]
+"flake8" = "*"
+mypy = "*"
+
+[requires]
+python_version = "3.6"
