@@ -12,7 +12,7 @@ setuptools.setup(
     platforms='any',
     install_requires=['click', 'Flask', 'python-slugify',
                       'peewee', 'mistune', 'Frozen-Flask',
-                      'django-htmlmin'],
+                      'django-htmlmin', 'python-dotenv'],
     classifiers=['Development Status :: 3 - Alpha',
                  'Framework :: Flask',
                  'License :: OSI Approved :: MIT License',
