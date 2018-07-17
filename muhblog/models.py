@@ -1,96 +1,80 @@
 import re
 from datetime import datetime
 
-import flask
-import peewee
+from flask import Markup
 from slugify import slugify
+from peewee import TextField, DateTimeField, ForeignKeyField, CharField
 
 from . import markdown
-from .database import db
+from .database import BaseModel
+
+SLUG_LENGTH = 100
+SNUB_LENGTH = 300
+DATE_FORMAT = '%Y-%m-%d %H:%M'
 
 
-Model = db.get_model_base_class()
+class MarkdownModel(BaseModel):
+    text = TextField()
 
-
-class MarkdownModel(Model):
-    text = peewee.TextField()
-
-    def convert_text(self):
-        return markdown.convert(self.text)
+    def render_markdown(self) -> Markup:
+        return markdown.render(self.text)
 
 
 class Entry(MarkdownModel):
-    title = peewee.TextField()
-    slug = peewee.TextField(unique=True)
-    date = peewee.DateTimeField()
+    slug = CharField(unique=True, max_length=SLUG_LENGTH)
+    title = CharField()
+    date = DateTimeField()
 
     @classmethod
-    def create(cls, path):
-        with open(path, encoding='utf-8') as file:
-            metadata, text = markdown.parse_metadata(file.read())
+    def create(cls, text: str) -> 'Entry':
+        metadata, text = markdown.parse_metadata(text)
 
         instance = cls(
-            title=metadata['title'],
             slug=slugify(
                 metadata['title'],
-                max_length=flask.current_app.config['BLOG_SLUG_LENGTH_CHARACTERS']
+                max_length=SLUG_LENGTH
             ),
-            date=datetime.strptime(metadata['date'], '%Y-%m-%d %H:%M'),
+            title=metadata['title'],
+            date=datetime.strptime(metadata['date'], DATE_FORMAT),
             text=text
         )
         instance.save()
         for tag in metadata['tags']:
-            TagMapping.create(entry=instance, name=tag)
+            EntryTag.create(entry=instance, name=tag)
 
         return instance
 
-    def convert_snub(self):
-        length = flask.current_app.config['BLOG_SNUB_LENGTH_CHARACTERS']
-        snub = re.search(rf'^(.{{1,{length}}}[\.\!\?])', self.text) \
+    def render_snub(self) -> str:
+        snub = re.search(rf'^(.{{1,{SNUB_LENGTH}}}[\.\!\?])', self.text) \
             .group(1)
-        return markdown.convert(snub)
-
-    def url(self):
-        return flask.url_for('site.entry', year=self.date.year,
-                             month=f'{self.date.month:0>2}',
-                             day=f'{self.date.day:0>2}', slug=self.slug)
+        return markdown.render(snub)
 
 
 class AboutPage(MarkdownModel):
     @classmethod
-    def create(cls, path):
-        with open(path, encoding='utf-8') as file:
-            return super().create(text=file.read())
+    def create(cls, text: str) -> 'AboutPage':
+        return super().create(text=text)
+
+
+class Tag(BaseModel):
+    slug = CharField(unique=True, max_length=SLUG_LENGTH)
+    name = TextField()
 
     @classmethod
-    def create_default(cls):
-        super().create(
-            text='No `about.md` was found in `BLOG_USER_STATIC_DIRECTORY`'
+    def create(cls, name: str) -> 'Tag':
+        return super().create(
+            name=name,
+            slug=slugify(name, max_length=SLUG_LENGTH)
         )
 
 
-class TagDefinition(Model):
-    name = peewee.TextField()
-    slug = peewee.TextField(unique=True)
+class EntryTag(BaseModel):
+    definition = ForeignKeyField(Tag, backref='entries')
+    entry = ForeignKeyField(Entry, backref='tags')
 
     @classmethod
-    def create(cls, name):
-        return super().create(name=name, slug=slugify(name))
-
-    def url(self):
-        return flask.url_for('site.archive', slug=self.slug)
-
-
-class TagMapping(Model):
-    definition = peewee.ForeignKeyField(TagDefinition, related_name='mappings')
-    entry = peewee.ForeignKeyField(Entry, related_name='tags')
-
-    class Meta:
-        constraints = [peewee.SQL('UNIQUE(definition_id, entry_id)')]
-
-    @classmethod
-    def create(cls, entry, name):
+    def create(cls, entry: Entry, name: str) -> 'EntryTag':
         return super().create(
             entry=entry,
-            definition=TagDefinition.get_or_create(name=name)[0]
+            definition=Tag.get_or_create(name=name)[0]
         )
