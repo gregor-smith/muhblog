@@ -1,68 +1,63 @@
-import io
 import math as maths
+from typing import Iterable
 
-import flask
-import pkg_resources
+from flask import Response, render_template, make_response
+from peewee import SelectQuery
 from htmlmin.minify import html_minify
+
+from .models import Entry
+
+PAGE_GROUP_SIZE = 5
+ENTRIES_PER_PAGE = 10
 
 
 class Paginator:
-    def __init__(self, query, current_page):
+    query: SelectQuery
+    current_page: int
+
+    def __init__(self, query: SelectQuery, current_page: int) -> None:
         self.query = query
         self.current_page = current_page
-        self.total_entries = self.query.count()
 
-    def get_entries(self, page=None):
-        return self.query.paginate(
-            page or self.current_page,
-            flask.current_app.config['BLOG_ENTRIES_PER_PAGE']
-        )
+    def get_entries(self) -> Iterable[Entry]:
+        return self.query.paginate(self.current_page, ENTRIES_PER_PAGE) \
+            .iterator()
 
-    def total_pages(self):
-        per_page = flask.current_app.config['BLOG_ENTRIES_PER_PAGE']
-        return maths.ceil(self.total_entries / per_page)
+    def get_total_pages(self) -> int:
+        return maths.ceil(self.query.count() / ENTRIES_PER_PAGE)
 
-    def has_previous_page(self):
+    def has_previous_page(self) -> bool:
         return self.current_page != 1
 
-    def has_next_page(self):
-        return self.current_page != self.total_pages()
+    def has_next_page(self) -> bool:
+        return self.current_page != self.get_total_pages()
 
-    def page_link_group(self, start=1, group_size=5):
-        end = self.total_pages()
+    def page_number_group(self) -> Iterable[int]:
+        padding = PAGE_GROUP_SIZE // 2
+        start_page = self.current_page - padding
+        end_page = self.current_page + padding
 
-        if end - start <= group_size:
-            return range(start, end + 1)
+        total_pages = self.get_total_pages()
 
-        padding = group_size // 2
-        group_start = self.current_page - padding
-        group_end = self.current_page + padding
-
-        if group_start < start:
-            end_extra = start - group_start
-            group_start = start
+        if start_page < 1 and end_page > total_pages:
+            start_page = 1
+            end_page = total_pages
         else:
-            end_extra = 0
+            if start_page < 1:
+                difference = 1 - start_page
+                start_page += difference
+                end_page += difference
+            if end_page > total_pages:
+                difference = end_page - total_pages
+                end_page -= difference
+                start_page -= difference
+                if start_page < 1:
+                    start_page = 1
 
-        if group_end > end:
-            start_extra = (0 if end_extra != 0 else (group_end - end))
-            group_end = end
-        else:
-            start_extra = 0
-
-        return range(group_start - start_extra, group_end + end_extra + 1)
-
-
-def send_configurable_file(config_key, mimetype, fallback):
-    path = flask.current_app.config[config_key]
-    if path is None:
-        byts = pkg_resources.resource_string('muhblog', fallback)
-    else:
-        with open(path, mode='rb') as file:
-            byts = file.read()
-    return flask.send_file(io.BytesIO(byts), mimetype=mimetype)
+        return range(start_page, end_page + 1)
 
 
-def render_template(*args, **kwargs):
-    html = flask.render_template(*args, **kwargs)
-    return html_minify(html)
+def template_response(*args, status_code: int = 200, **kwargs) -> Response:
+    html = render_template(*args, **kwargs)
+    html = html_minify(html)
+    return make_response(html, status_code)
