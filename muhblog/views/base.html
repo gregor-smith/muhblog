@@ -7,20 +7,20 @@
         <title>{{ BLOG_NAME if title is none else
                   '{} | {}'.format(title, BLOG_NAME) }}</title>
         <link rel="stylesheet" type="text/css"
-              href="{{ url_for('site.stylesheet') }}"/>
+              href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png"
-              href="{{ url_for('site.favicon') }}"/>
+              href="{{ url_for('static', filename='favicon.png') }}"/>
     </head>
     <body class="flex column">
         <nav class="flex">
             <div class="flex centred">
-                <a href="{{ url_for('site.front') }}">
+                <a href="{{ url_for('controllers.front') }}">
                     {{ BLOG_NAME }}
                 </a>
-                <a href="{{ url_for('site.archive') }}">
+                <a href="{{ url_for('controllers.archive') }}">
                     archive
                 </a>
-                <a href="{{ url_for('site.about') }}">
+                <a href="{{ url_for('controllers.about') }}">
                     about
                 </a>
             </div>

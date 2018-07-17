@@ -10,14 +10,18 @@
         </time>
         <div class="flex" id="tags">
         {% for tag in entry.tags %}
-            <a href="{{ tag.definition.url() }}">
+            {% set url = url_for(
+                'controllers.archive_by_tag',
+                slug=tag.definition.slug
+            ) %}
+            <a href="{{ url }}">
                 {{ tag.definition.name }}
             </a>
         {% endfor %}
         </div>
     </header>
     <section id="text">
-        {{ entry.convert_text() }}
+        {{ entry.render_markdown() }}
     </section>
 </article>
 
