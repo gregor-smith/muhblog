@@ -8,7 +8,6 @@ setuptools.setup(
     author_email='gregor_smith@outlook.com',
     url='https://github.com/gregor-smith/muhblog',
     packages=['muhblog'],
-    include_package_data=True,
     platforms='any',
     install_requires=['click', 'Flask', 'python-slugify',
                       'peewee', 'mistune', 'Frozen-Flask',
@@ -16,6 +15,5 @@ setuptools.setup(
     classifiers=['Development Status :: 3 - Alpha',
                  'Framework :: Flask',
                  'License :: OSI Approved :: MIT License',
-                 'Programming Language :: Python :: 3.6'],
-    zip_safe=False
+                 'Programming Language :: Python :: 3.6']
 )
