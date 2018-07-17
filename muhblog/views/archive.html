@@ -2,63 +2,65 @@
 
 {% block content %}
 
-<ul id="archive">
-{% for year, year_dict in entries.items() | sort(reverse=true) %}
-    <li>
-        <a href="{{ url_for('controllers.archive_by_year', year=year) }}">
-            {{ year }}
-        </a>
-        <ul>
-        {% for month, month_dict in year_dict.items() | sort(reverse=true) %}
-            <li>
-                {% set padded_month = '{:0>2}'.format(month) %}
-                {% set url = url_for(
-                    'controllers.archive_by_month',
-                    year=year,
-                    month=padded_month
-                ) %}
-                <a href="{{ url }}">
-                    {{ padded_month }}
-                </a>
-                <ul>
-                {% for day, entry_list in month_dict.items() | sort(reverse=true) %}
-                    <li>
-                        {% set padded_day = '{:0>2}'.format(day) %}
-                        {% set url = url_for(
-                            'controllers.archive_by_day',
-                            year=year,
-                            month=padded_month,
-                            day=padded_day
-                        ) %}
-                        <a href="{{ url }}">
-                            {{ padded_day }}
-                        </a>
-                        <ul>
-                        {% for entry in entry_list %}
-                            <li>
-                                <h3>
-                                    {% set url = url_for(
-                                        'controllers.entry',
-                                        year='{:0>2}'.format(entry.date.year),
-                                        month='{:0>2}'.format(entry.date.month),
-                                        day='{:0>2}'.format(entry.date.day),
-                                        slug=entry.slug
-                                    ) %}
-                                    <a href="{{ url }}">
-                                        {{ entry.title }}
-                                    </a>
-                                </h3>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    </li>
-                {% endfor %}
-                </ul>
-            </li>
-        {% endfor %}
-        </ul>
-    </li>
-{% endfor %}
-</ul>
+<div id="archive">
+    <ul>
+    {% for year, year_dict in entries.items() | sort(reverse=true) %}
+        <li>
+            <a href="{{ url_for('controllers.archive_by_year', year=year) }}">
+                {{ year }}
+            </a>
+            <ul>
+            {% for month, month_dict in year_dict.items() | sort(reverse=true) %}
+                <li>
+                    {% set padded_month = '{:0>2}'.format(month) %}
+                    {% set url = url_for(
+                        'controllers.archive_by_month',
+                        year=year,
+                        month=padded_month
+                    ) %}
+                    <a href="{{ url }}">
+                        {{ padded_month }}
+                    </a>
+                    <ul>
+                    {% for day, entry_list in month_dict.items() | sort(reverse=true) %}
+                        <li>
+                            {% set padded_day = '{:0>2}'.format(day) %}
+                            {% set url = url_for(
+                                'controllers.archive_by_day',
+                                year=year,
+                                month=padded_month,
+                                day=padded_day
+                            ) %}
+                            <a href="{{ url }}">
+                                {{ padded_day }}
+                            </a>
+                            <ul>
+                            {% for entry in entry_list %}
+                                <li>
+                                    <h3>
+                                        {% set url = url_for(
+                                            'controllers.entry',
+                                            year='{:0>2}'.format(entry.date.year),
+                                            month='{:0>2}'.format(entry.date.month),
+                                            day='{:0>2}'.format(entry.date.day),
+                                            slug=entry.slug
+                                        ) %}
+                                        <a href="{{ url }}">
+                                            {{ entry.title }}
+                                        </a>
+                                    </h3>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+    </ul>
+</div>
 
 {% endblock %}

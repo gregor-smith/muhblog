@@ -23,22 +23,8 @@ time {
 
 pre,
 code {
-    font-size: 1.875rem;
     font-family: monospace;
     background-color: $gray-200
-}
-
-@media (min-width: $mobile-breakpoint) {
-    pre,
-    code {
-        font-size: 0.875rem
-    }
-}
-
-h1 code,
-h2 code,
-h3 code {
-    font-size: inherit
 }
 
 pre {
@@ -52,16 +38,9 @@ nav {
 }
 
 nav a {
-    font-size: 2.5rem;
-    padding: 1rem 1.5rem;
+    font-size: 1.125rem;
+    padding: 0.25rem 0.625rem;
     color: $gray-200
-}
-
-@media (min-width: $mobile-breakpoint) {
-    nav a {
-        font-size: 1.125rem;
-        padding: 0.25rem 0.625rem
-    }
 }
 
 nav a:hover {
@@ -85,8 +64,14 @@ nav a:first-child {
 }
 
 .front-entry {
-    padding: 1.5rem 2.5rem;
+    padding: 0.5rem;
     border-bottom: $dark-border
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .front-entry {
+        padding: 1rem 1.5rem
+    }
 }
 
 .front-entry h1, .front-entry p {
@@ -98,36 +83,21 @@ nav a:first-child {
 }
 
 .front-entry header a {
-    font-size: 2.875rem;
+    font-size: 1.5rem;
     color: $gray-900
 }
 
-@media (min-width: $mobile-breakpoint) {
-    .front-entry {
-        padding: 1rem 1.5rem
-    }
-
-    .front-entry header a {
-        font-size: 1.5rem
-    }
-}
-
 #pagination {
-    margin: 2.5rem auto;
-    font-size: 2.5rem
+    margin: 1.25rem auto;
+    font-size: 1.125rem
 }
 
 #pagination a,
 #pagination span {
-    margin: auto 0.625rem
+    margin: auto 0.375rem
 }
 
 @media (min-width: $mobile-breakpoint) {
-    #pagination {
-        margin: 1.25rem auto;
-        font-size: 1.125rem
-    }
-
     #pagination a,
     #pagination span {
         margin: auto 0.5rem
@@ -135,63 +105,47 @@ nav a:first-child {
 }
 
 .entry {
-    padding: 1.5rem
-}
-
-.entry h1 {
-    margin: 3rem 0 1.5rem 0;
-    font-size: 3.25rem
-}
-
-.entry h1:first-child {
-    margin-top: 1.875rem
+    padding: 0.5rem
 }
 
 @media (min-width: $mobile-breakpoint) {
-    .entry h1 {
-        margin: 2rem 0 0.625rem 0;
-        font-size: 1.75rem
-    }
-
-    .entry h1:first-child {
-        margin-top: 0.625rem
+    .entry {
+        padding: 1.5rem
     }
 }
 
+.entry h1 {
+    margin: 2rem 0 0.625rem 0;
+    font-size: 1.75rem;
+}
+
 .entry h2 {
-    font-size: 3rem;
+    font-size: 1.5rem;
     margin: 1.5rem 0 0.625rem 0;
     border-bottom: $dark-border
 }
 
-@media (min-width: $mobile-breakpoint) {
-    .entry h2 {
-        font-size: 1.5rem
-    }
-}
-
 .entry h3 {
-    font-size: 2.5rem;
+    font-size: 1.25rem;
     margin: 1.25rem 0 0.5rem 0
 }
 
-@media (min-width: $mobile-breakpoint) {
-    .entry h3 {
-        font-size: 1.25rem
-    }
-}
-
 .entry header {
-    padding-bottom: 1rem;
-    margin-bottom: 3.75rem;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 0.375rem;
     border-bottom: $dark-border
 }
 
 @media (min-width: $mobile-breakpoint) {
     .entry header {
-        padding-bottom: 0.375rem;
-        margin-bottom: 2rem
+        align-items: baseline
     }
+}
+
+.entry header h1 {
+    margin-top: 0.625rem;
+    text-align: center
 }
 
 .entry time {
@@ -199,7 +153,14 @@ nav a:first-child {
 }
 
 #tags {
-    flex-wrap: wrap
+    flex-wrap: wrap;
+    justify-content: center
+}
+
+@media (min-width: $mobile-breakpoint) {
+    #tags {
+        justify-content: start
+    }
 }
 
 #tags a {
@@ -217,7 +178,23 @@ nav a:first-child {
 }
 
 #archive {
-    margin: 1.5rem
+    margin: 0.5rem 1rem
+}
+
+@media (min-width: $mobile-breakpoint) {
+    #archive {
+        margin: 1.5rem
+    }
+}
+
+#archive ul {
+    padding-left: 1rem
+}
+
+@media (min-width: $mobile-breakpoint) {
+    #archive ul {
+        padding-left: 2rem
+    }
 }
 
 #archive li {
@@ -239,7 +216,7 @@ nav a:first-child {
 
 @media (min-width: $mobile-breakpoint) {
     .flex.centred {
-        width: 50rem
+        max-width: 50rem
     }
 }
 
