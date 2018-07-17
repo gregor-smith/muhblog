@@ -1,12 +1,11 @@
 import os
-import functools
 from pathlib import Path
 
 import click
 import flask
 from flask_frozen import Freezer
 
-from .views import blueprint
+from . import views, filters
 from .models import Entry, AboutPage, TagDefinition, TagMapping
 from .database import db
 
@@ -33,14 +32,9 @@ def create():
     app = flask.Flask('muhblog')
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
     app.jinja_env.globals['config'] = app.config
-    app.jinja_env.filters['format_datetime'] = functools.partial(
-        str.format, '{:%d/%m/%Y %H:%M}'
-    )
-    app.jinja_env.filters['format_datetime_iso'] = functools.partial(
-        str.format, '{:%Y-%m-%d %H:%M:%S}'
-    )
 
-    app.register_blueprint(blueprint)
+    app.register_blueprint(views.blueprint)
+    app.register_blueprint(filters.blueprint)
 
     app.config.from_mapping(DEFAULT_CONFIG)
     app.config.from_json(
