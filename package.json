@@ -15,5 +15,8 @@
   },
   "dependencies": {
     "bootstrap": "^4.1.2"
+  },
+  "scripts": {
+    "freeze": "webpack -p && pipenv run flask freeze"
   }
 }
