@@ -1,52 +1,56 @@
 import re
+from typing import Dict, Tuple, Optional, Union, List
 
-import flask
-import mistune
-
-metadata_regex = re.compile(r'^([a-z]+): (.+)', re.IGNORECASE)
+from flask import Markup
+from mistune import Markdown, Renderer
 
 
-class Renderer(mistune.Renderer):
-    spoiler_regex = re.compile(r'\[spoiler\](.+?)\[/spoiler\]', re.DOTALL)
-    spoiler_replacement = r'<span class="spoiler">\1</span>'
-
-    def paragraph(self, text):
-        replaced = self.spoiler_regex.sub(self.spoiler_replacement, text)
+class SpoilerRenderer(Renderer):
+    def paragraph(self, text: str) -> str:
+        replaced = re.sub(
+            pattern=r'\[spoiler\](.+?)\[/spoiler\]',
+            repl=r'<span class="spoiler">\1</span>',
+            string=text,
+            flags=re.DOTALL
+        )
         return super().paragraph(replaced)
 
 
-def parse_metadata(text):
+def parse_metadata(text: str) -> Tuple[Dict[str, str], str]:
     split = text.split('\n')
     metadata = {}
+
+    regex = re.compile(r'^([a-z]+): (.+)', re.IGNORECASE)
 
     # text is returned as-is if the first non-whitespace line doesn't match
     # the metadata regex (meaning the file has no metadata)
     for index, line in enumerate(split):
         if line and not line.isspace():
-            if not metadata_regex.search(line):
+            if regex.search(line) is None:
                 return metadata, text
             break
 
-    last_key = last_value = None
+    last_key: Optional[str] = None
+    last_value: Optional[Union[str, List[str]]] = None
 
     for index, line in enumerate(split[index:]):
         if not line or line.isspace():
             # return on the first all whitespace line,
             # as this marks the end of the metadata block
             return metadata, '\n'.join(split[index + 1:])
-        match = metadata_regex.search(line)
-        if match:
-            last_key, last_value = match.groups()
-            metadata[last_key] = last_value
-        else:
+        match = regex.search(line)
+        if match is None:
             value = line.lstrip()
             if isinstance(last_value, list):
                 last_value.append(value)
             else:
                 metadata[last_key] = last_value = [last_value, value]
+        else:
+            last_key, last_value = match.groups()
+            metadata[last_key] = last_value
 
 
-def convert(text):
-    parser = mistune.Markdown(renderer=Renderer())
+def render(text) -> Markup:
+    parser = Markdown(renderer=SpoilerRenderer())
     html = parser(text)
-    return flask.Markup(html)
+    return Markup(html)
