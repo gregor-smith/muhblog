@@ -7,7 +7,7 @@ name = "pypi"
 click = "*"
 flask = "*"
 python-slugify = "*"
-peewee = "*"
+peewee = "==2.10.2"
 mistune = "*"
 frozen-flask = "*"
 django-htmlmin = "*"
@@ -16,6 +16,7 @@ python-dotenv = "*"
 [dev-packages]
 "flake8" = "*"
 mypy = "*"
+ipdb = "*"
 
 [requires]
 python_version = "3.6"
