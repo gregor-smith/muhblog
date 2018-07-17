@@ -1,0 +1,270 @@
+@import "node_modules/bootstrap/scss/bootstrap-reboot.scss";
+
+
+$dark-border: 1px solid $gray-400;
+$light-border: 1px solid $gray-300;
+
+$mobile-breakpoint: 37.5rem;
+
+
+body {
+    background-color: $gray-200;
+    color: $gray-700
+}
+
+a {
+    text-decoration: none;
+    color: $gray-600
+}
+
+time {
+    font-style: italic
+}
+
+pre,
+code {
+    font-size: 1.875rem;
+    font-family: monospace;
+    background-color: $gray-200
+}
+
+@media (min-width: $mobile-breakpoint) {
+    pre,
+    code {
+        font-size: 0.875rem
+    }
+}
+
+h1 code,
+h2 code,
+h3 code {
+    font-size: inherit
+}
+
+pre {
+    padding: 0.625rem;
+    overflow: auto
+}
+
+nav {
+    background-color: $gray-700;
+    color: $gray-200
+}
+
+nav a {
+    font-size: 2.5rem;
+    padding: 1rem 1.5rem;
+    color: $gray-200
+}
+
+@media (min-width: $mobile-breakpoint) {
+    nav a {
+        font-size: 1.125rem;
+        padding: 0.25rem 0.625rem
+    }
+}
+
+nav a:hover {
+    background-color: $gray-900;
+    color: $white;
+    text-decoration: none
+}
+
+nav a:first-child {
+    margin-right: auto
+}
+
+#content {
+    border: $light-border;
+    background-color: $gray-100
+}
+
+#content a:visited,
+#content a:hover {
+    color: $gray-900
+}
+
+.front-entry {
+    padding: 1.5rem 2.5rem;
+    border-bottom: $dark-border
+}
+
+.front-entry h1, .front-entry p {
+    margin: 0
+}
+
+.front-entry .snub {
+    padding: 1rem 0 0.625rem 0
+}
+
+.front-entry header a {
+    font-size: 2.875rem;
+    color: $gray-900
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .front-entry {
+        padding: 1rem 1.5rem
+    }
+
+    .front-entry header a {
+        font-size: 1.5rem
+    }
+}
+
+#pagination {
+    margin: 2.5rem auto;
+    font-size: 2.5rem
+}
+
+#pagination a,
+#pagination span {
+    margin: auto 0.625rem
+}
+
+@media (min-width: $mobile-breakpoint) {
+    #pagination {
+        margin: 1.25rem auto;
+        font-size: 1.125rem
+    }
+
+    #pagination a,
+    #pagination span {
+        margin: auto 0.5rem
+    }
+}
+
+.entry {
+    padding: 1.5rem
+}
+
+.entry h1 {
+    margin: 3rem 0 1.5rem 0;
+    font-size: 3.25rem
+}
+
+.entry h1:first-child {
+    margin-top: 1.875rem
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .entry h1 {
+        margin: 2rem 0 0.625rem 0;
+        font-size: 1.75rem
+    }
+
+    .entry h1:first-child {
+        margin-top: 0.625rem
+    }
+}
+
+.entry h2 {
+    font-size: 3rem;
+    margin: 1.5rem 0 0.625rem 0;
+    border-bottom: $dark-border
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .entry h2 {
+        font-size: 1.5rem
+    }
+}
+
+.entry h3 {
+    font-size: 2.5rem;
+    margin: 1.25rem 0 0.5rem 0
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .entry h3 {
+        font-size: 1.25rem
+    }
+}
+
+.entry header {
+    padding-bottom: 1rem;
+    margin-bottom: 3.75rem;
+    border-bottom: $dark-border
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .entry header {
+        padding-bottom: 0.375rem;
+        margin-bottom: 2rem
+    }
+}
+
+.entry time {
+    margin: 0.375rem
+}
+
+#tags {
+    flex-wrap: wrap
+}
+
+#tags a {
+    margin: 0 0.375rem;
+    font-style: italic
+}
+
+.spoiler {
+    background-color: $black;
+    color: $black
+}
+
+.spoiler:hover {
+    color: $white
+}
+
+#archive {
+    margin: 1.5rem
+}
+
+#archive li {
+    list-style-type: square
+}
+
+.flex {
+    display: flex
+}
+
+.flex.column {
+    flex-direction: column
+}
+
+.flex.centred {
+    width: 100%;
+    margin: 0 auto
+}
+
+@media (min-width: $mobile-breakpoint) {
+    .flex.centred {
+        width: 50rem
+    }
+}
+
+.arrow {
+    font-size: 0.875rem;
+    user-select: none;
+    cursor: pointer
+}
+
+.arrow:hover {
+    text-decoration: none
+}
+
+.arrow.left.double:before {
+    content: "◀◀"
+}
+
+.arrow.right.double:before {
+    content: "▶▶"
+}
+
+.arrow.left:before {
+    content: "◀"
+}
+
+.arrow.right:before {
+    content: "▶"
+}

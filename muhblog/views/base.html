@@ -4,12 +4,15 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>{{ BLOG_NAME if title is none else
-                  '{} | {}'.format(title, BLOG_NAME) }}</title>
+        <meta http-equiv='X-UA-Compatible' content='IE=edge'/>
+        <meta content="width=device-width, initial-scale=1, shrink-to-fit=no"
+              name="viewport"/>
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png"
               href="{{ url_for('static', filename='favicon.png') }}"/>
+        <title>{{ BLOG_NAME if title is none else
+                  '{} | {}'.format(title, BLOG_NAME) }}</title>
     </head>
     <body class="flex column">
         <nav class="flex">

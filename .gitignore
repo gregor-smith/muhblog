@@ -5,3 +5,5 @@ freeze/
 about.md
 config.json
 *.pyc
+*.map
+node_modules/*

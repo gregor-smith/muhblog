@@ -35,16 +35,16 @@
 
 <div class="flex" id="pagination">
     {% if paginator.has_previous_page() %}
-        <a class="no-highlight first-page-button"
+        <a class="arrow left double"
             href="{{ page_url(1) }}">
         </a>
-        <a class="no-highlight previous-page-button"
+        <a class="arrow left"
            href="{{ page_url(paginator.current_page - 1) }}">
         </a>
     {% else %}
-        <span class="no-highlight default-pointer first-page-button">
+        <span class="arrow left double">
         </span>
-        <span class="no-highlight default-pointer previous-page-button">
+        <span class="arrow left">
         </span>
     {% endif %}
 
@@ -61,16 +61,16 @@
     {% endfor %}
 
     {% if paginator.has_next_page() %}
-        <a class="no-highlight next-page-button"
+        <a class="arrow right"
            href="{{ page_url(paginator.current_page + 1) }}">
         </a>
-        <a class="no-highlight last-page-button"
+        <a class="arrow right double"
            href="{{ page_url(paginator.get_total_pages()) }}">
         </a>
     {% else %}
-        <span class="no-highlight default-pointer next-page-button">
+        <span class="arrow right">
         </span>
-        <span class="no-highlight default-pointer last-page-button">
+        <span class="arrow right double">
         </span>
     {% endif %}
 </div>
