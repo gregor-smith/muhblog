@@ -1,80 +1,78 @@
-import os
 from pathlib import Path
 
-import click
-import flask
+from flask import Flask
 from flask_frozen import Freezer
 
 from . import controllers, filters
-from .models import Entry, AboutPage, TagDefinition, TagMapping
-from .database import db
+from .models import Entry, Tag, EntryTag, AboutPage
+from .database import database
 
-WINDOWS = os.name == 'nt'
-CONFIG_DIRECTORY = click.get_app_dir('muhblog')
-CONFIG_FILE_PATH = str(Path(CONFIG_DIRECTORY, 'config.json'))
 DEFAULT_CONFIG = {
     'BLOG_NAME': 'muhblog',
-    'BLOG_DATABASE_PATH': str(Path(CONFIG_DIRECTORY, 'muhblog.sqlite')),
-    'BLOG_ENTRIES_DIRECTORY': str(Path(CONFIG_DIRECTORY, 'entries')),
-    'BLOG_ABOUT_PATH': None,
-    'BLOG_FAVICON_PATH': None,
-    'BLOG_STYLESHEET_PATH': None,
-    'BLOG_ROBOTS_TXT_PATH': None,
-    'BLOG_ENTRIES_PER_PAGE': 10,
-    'BLOG_SNUB_LENGTH_CHARACTERS': 300,
-    'BLOG_SLUG_LENGTH_CHARACTERS': 100,
-    'FREEZER_DESTINATION': str(Path(CONFIG_DIRECTORY, 'freeze')),
+    'BLOG_ENTRIES_DIRECTORY': str(Path.cwd().joinpath('entries')),
+    'BLOG_ABOUT_PATH': str(Path.cwd().joinpath('about.md')),
+    'FREEZER_DESTINATION': str(Path.cwd().joinpath('freeze')),
     'FREEZER_DESTINATION_IGNORE': ['.git*']
 }
+CONFIG_FILE_PATH = str(Path.cwd().joinpath('config.json'))
 
 
-def create():
-    app = flask.Flask('muhblog')
+@database.atomic()
+def initialise_database(app: Flask) -> None:
+    entries_directory = Path(app.config['BLOG_ENTRIES_DIRECTORY'])
+    if not entries_directory.exists():
+        app.logger.error(
+            'BLOG_ENTRIES_DIRECTORY "%s" does not exist',
+            entries_directory
+        )
+        return
+    if not entries_directory.is_dir():
+        app.logger.error(
+            'BLOG_ENTRIES_DIRECTORY "%s" is not a directory',
+            entries_directory
+        )
+        return
+
+    about_path = Path(app.config['BLOG_ABOUT_PATH'])
+    if not about_path.exists():
+        app.logger.error('BLOG_ABOUT_PATH "%s" does not exist', about_path)
+        return
+    if not about_path.is_file():
+        app.logger.error('BLOG_ABOUT_PATH "%s" is not a file', about_path)
+        return
+
+    app.logger.debug('Creating tables')
+    database.create_tables([Entry, Tag, EntryTag, AboutPage])
+
+    app.logger.info('Parsing entries')
+    entry_paths = [path for path in entries_directory.glob('*.md') if path.is_file()]
+    for index, path in enumerate(entry_paths, start=1):
+        app.logger.info('Adding %s/%s "%s"', index, len(entry_paths), path)
+        text = path.read_text(encoding='utf-8')
+        Entry.create(text)
+
+    app.logger.info('Adding about page "%s"', about_path)
+    about_text = about_path.read_text(encoding='utf-8')
+    AboutPage.create(about_text)
+
+
+def create() -> Flask:
+    app = Flask('muhblog')
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
-    app.jinja_env.globals['config'] = app.config
+    app.logger.setLevel('INFO')
 
     app.register_blueprint(controllers.blueprint)
     app.register_blueprint(filters.blueprint)
 
     app.config.from_mapping(DEFAULT_CONFIG)
-    app.config.from_json(
-        os.environ.get('BLOG_CONFIG_FILE_PATH', CONFIG_FILE_PATH),
-        silent=True
-    )
+    app.config.from_json(CONFIG_FILE_PATH)
 
-    db.init_app(app)
-
-    @app.cli.command(name='create-db')
-    @db.atomic()
-    def create_db():
-        db.create_tables(Entry, AboutPage, TagDefinition, TagMapping)
-
-        archive_directory = Path(app.config['BLOG_ENTRIES_DIRECTORY'])
-        print('adding entries')
-        count = 0
-        for path in archive_directory.glob('*.md'):
-            if path.is_dir():
-                continue
-            print(path)
-            Entry.create(path)
-            count += 1
-        print(f'added {count} entries')
-
-        if app.config['BLOG_ABOUT_PATH'] is None:
-            AboutPage.create_default()
-            print('no about page found, adding default')
-        else:
-            AboutPage.create(app.config['BLOG_ABOUT_PATH'])
+    initialise_database(app)
 
     @app.cli.command()
     def freeze():
         freezer = Freezer(app)
-        print(f'freezing to {app.config["FREEZER_DESTINATION"]}')
+        app.logger.info('Freezing to %s', app.config["FREEZER_DESTINATION"])
         freezer.freeze()
-
-    @app.cli.command('run-frozen')
-    def run_frozen():
-        freezer = Freezer(app)
-        freezer.run()
 
     return app
