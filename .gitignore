@@ -1,9 +1,11 @@
 .vscode/
 .mypy_cache/
+node_modules/
+*.pyc
+*.css
+*.map
+
 entries/
 freeze/
 about.md
 config.json
-*.pyc
-*.map
-node_modules/*
