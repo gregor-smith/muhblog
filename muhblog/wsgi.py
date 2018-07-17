@@ -5,7 +5,7 @@ import click
 import flask
 from flask_frozen import Freezer
 
-from . import views, filters
+from . import controllers, filters
 from .models import Entry, AboutPage, TagDefinition, TagMapping
 from .database import db
 
@@ -33,7 +33,7 @@ def create():
     app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
     app.jinja_env.globals['config'] = app.config
 
-    app.register_blueprint(views.blueprint)
+    app.register_blueprint(controllers.blueprint)
     app.register_blueprint(filters.blueprint)
 
     app.config.from_mapping(DEFAULT_CONFIG)

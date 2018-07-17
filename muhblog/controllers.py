@@ -5,9 +5,12 @@ import flask
 from .models import Entry, TagDefinition, TagMapping, AboutPage
 from .utils import send_configurable_file, Paginator, render_template
 
-blueprint = flask.Blueprint(name='site', import_name=__name__,
-                            static_folder='static',
-                            template_folder='templates')
+blueprint = flask.Blueprint(
+    name='controllers',
+    import_name=__name__,
+    static_folder='static',
+    template_folder='templates'
+)
 
 
 @blueprint.route('/', defaults={'page': 1})
