@@ -49,30 +49,29 @@ def initialise_database(app: Flask) -> None:
     for index, path in enumerate(entry_paths, start=1):
         app.logger.info('Adding %s/%s "%s"', index, len(entry_paths), path)
         text = path.read_text(encoding='utf-8')
-        Entry.create(text)
+        Entry.create(text=text)
 
     app.logger.info('Adding about page "%s"', about_path)
     about_text = about_path.read_text(encoding='utf-8')
-    AboutPage.create(about_text)
+    AboutPage.create(text=about_text)
 
 
 def create() -> Flask:
     app = Flask('muhblog')
-    app.jinja_env.trim_blocks = app.jinja_env.lstrip_blocks = True
-    app.logger.setLevel('INFO')
 
     app.register_blueprint(controllers.blueprint)
     app.register_blueprint(filters.blueprint)
 
     app.config.from_mapping(DEFAULT_CONFIG)
     app.config.from_json(CONFIG_FILE_PATH)
+    app.logger.setLevel('DEBUG' if app.debug else 'INFO')
 
     initialise_database(app)
 
     @app.cli.command()
-    def freeze():
+    def freeze() -> None:
         freezer = Freezer(app)
-        app.logger.info('Freezing to %s', app.config["FREEZER_DESTINATION"])
+        app.logger.info('Freezing to %s', app.config['FREEZER_DESTINATION'])
         freezer.freeze()
 
     return app
