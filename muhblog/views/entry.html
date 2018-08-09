@@ -1,28 +1,55 @@
+{% from "macros.html" import entry_url, entry_date %}
+
 {% extends "base.html" %}
+
 
 {% block content %}
 
 <article class="entry">
-    <header class="flex column">
-        <h1>{{ entry.title }}</h1>
-        <time datetime="{{ entry.date | format_datetime_iso }}">
-            {{ entry.date | format_datetime }}
-        </time>
-        <div class="flex" id="tags">
-        {% for tag in entry.tags %}
-            {% set url = url_for(
-                'controllers.archive_by_tag',
-                slug=tag.definition.slug
-            ) %}
-            <a href="{{ url }}">
-                {{ tag.definition.name }}
-            </a>
-        {% endfor %}
+
+    <div>
+        <header class="flex column">
+            <h1>{{ entry.title }}</h1>
+            {{ entry_date(entry )}}
+            <div class="flex" id="tags">
+                {% for tag in entry.tags %}
+                    {% set url = url_for(
+                        'controllers.archive_by_tag',
+                        slug=tag.definition.slug
+                    ) %}
+                    <a href="{{ url }}">
+                        {{ tag.definition.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </header>
+
+        <section id="text">
+            {{ entry.render_markdown() }}
+        </section>
+    </div>
+
+    <section id="navigation">
+        <div>
+            {% set previous = entry.previous_entry() %}
+            {% if previous is not none %}
+                <a href="{{ entry_url(previous) }}">
+                    <span class="arrow left"></span>
+                    {{ previous.title }}
+                </a>
+            {% endif %}
         </div>
-    </header>
-    <section id="text">
-        {{ entry.render_markdown() }}
+        <div>
+            {% set next = entry.next_entry() %}
+            {% if next is not none %}
+                <a href="{{ entry_url(next) }}">
+                    {{ next.title }}
+                    <span class="arrow right"></span>
+                </a>
+            {% endif %}
+        </div>
     </section>
+
 </article>
 
 {% endblock %}

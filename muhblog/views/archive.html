@@ -1,4 +1,7 @@
+{% from "macros.html" import entry_url %}
+
 {% extends "base.html" %}
+
 
 {% block content %}
 
@@ -38,14 +41,7 @@
                             {% for entry in entry_list %}
                                 <li>
                                     <h3>
-                                        {% set url = url_for(
-                                            'controllers.entry',
-                                            year='{:0>2}'.format(entry.date.year),
-                                            month='{:0>2}'.format(entry.date.month),
-                                            day='{:0>2}'.format(entry.date.day),
-                                            slug=entry.slug
-                                        ) %}
-                                        <a href="{{ url }}">
+                                        <a href="{{ entry_url(entry) }}">
                                             {{ entry.title }}
                                         </a>
                                     </h3>

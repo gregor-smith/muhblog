@@ -1,0 +1,23 @@
+{% macro page_url(page) %}
+    {{ url_for('controllers.front', page=page) }}
+{% endmacro %}
+
+
+{% macro entry_url(entry) %}
+    {{-
+        url_for(
+            'controllers.entry',
+            year='{:0>2}'.format(entry.date.year),
+            month='{:0>2}'.format(entry.date.month),
+            day='{:0>2}'.format(entry.date.day),
+            slug=entry.slug
+        )
+    -}}
+{% endmacro %}
+
+
+{% macro entry_date(entry) %}
+    <time datetime="{{ entry.date | format_datetime_iso }}">
+        {{ entry.date | format_datetime }}
+    </time>
+{% endmacro %}

@@ -5,7 +5,7 @@ const CSS_FILENAME = 'stylesheet.css'
 
 
 module.exports = {
-    entry: './style/main.scss',
+    entry: path.join(__dirname, 'style', 'main.scss'),
     output: {
         path: path.join(__dirname, 'muhblog', 'static'),
         filename: CSS_FILENAME,

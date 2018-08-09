@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from typing import Optional
 
 from flask import Markup
 from slugify import slugify
@@ -49,11 +50,23 @@ class Entry(MarkdownModel):
             .group(1)
         return markdown.render(snub)
 
+    def next_entry(self) -> Optional['Entry']:
+        try:
+            return self.__class__ \
+                .get_by_id(self.id + 1)
+        except self.__class__.DoesNotExist:
+            return None
+
+    def previous_entry(self) -> Optional['Entry']:
+        try:
+            return self.__class__ \
+                .get_by_id(self.id - 1)
+        except self.__class__.DoesNotExist:
+            return None
+
 
 class AboutPage(MarkdownModel):
-    @classmethod
-    def create(cls, text: str) -> 'AboutPage':
-        return super().create(text=text)
+    pass
 
 
 class Tag(BaseModel):
