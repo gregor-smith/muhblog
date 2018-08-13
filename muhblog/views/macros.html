@@ -17,7 +17,7 @@
 
 
 {% macro entry_date(entry) %}
-    <time datetime="{{ entry.date | format_datetime_iso }}">
-        {{ entry.date | format_datetime }}
+    <time datetime="{{ '{:%Y-%m-%d %H:%M:%S}'.format(entry.date) }}">
+        {{ '{:%d/%m/%Y %H:%M}'.format(entry.date) }}
     </time>
 {% endmacro %}

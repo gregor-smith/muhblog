@@ -3,7 +3,7 @@ from pathlib import Path
 from flask import Flask
 from flask_frozen import Freezer
 
-from . import controllers, filters
+from . import controllers
 from .models import Entry, Tag, EntryTag, AboutPage
 from .database import database
 
@@ -60,7 +60,6 @@ def create() -> Flask:
     app = Flask('muhblog')
 
     app.register_blueprint(controllers.blueprint)
-    app.register_blueprint(filters.blueprint)
 
     app.config.from_mapping(DEFAULT_CONFIG)
     app.config.from_json(CONFIG_FILE_PATH)
