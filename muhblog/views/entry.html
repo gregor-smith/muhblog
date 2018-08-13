@@ -5,7 +5,7 @@
 
 {% block content %}
 
-<article class="entry">
+<article class="entry flex column">
 
     <div>
         <header class="flex column">
@@ -29,7 +29,7 @@
         </section>
     </div>
 
-    <section id="navigation">
+    <section id="navigation" class="flex">
         <div>
             {% set previous = entry.previous_entry() %}
             {% if previous is not none %}
