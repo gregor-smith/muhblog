@@ -12,6 +12,7 @@ mistune = "*"
 frozen-flask = "*"
 django-htmlmin = "*"
 python-dotenv = "*"
+pygments = "*"
 
 [dev-packages]
 "flake8" = "*"

@@ -2,7 +2,10 @@ import re
 from typing import Dict, Tuple, Optional, Union, List
 
 from flask import Markup
-from mistune import Markdown, Renderer
+from mistune import Markdown, Renderer, escape
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.html import HtmlFormatter
 
 
 class SpoilerRenderer(Renderer):
@@ -14,6 +17,15 @@ class SpoilerRenderer(Renderer):
             flags=re.DOTALL
         )
         return super().paragraph(replaced)
+
+    def block_code(self, code: str, lang: str) -> str:
+        if not lang:
+            return f'<pre><code>{escape(code)}</code></pre>'
+        return highlight(
+            code=code,
+            lexer=get_lexer_by_name(lang, stripall=True),
+            formatter=HtmlFormatter(noclasses=True)
+        )
 
 
 def parse_metadata(text: str) -> Tuple[Dict[str, str], str]:
