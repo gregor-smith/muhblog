@@ -8,37 +8,37 @@ from .models import Entry, Tag, EntryTag, AboutPage
 from .database import database
 
 DEFAULT_CONFIG = {
-    'BLOG_NAME': 'muhblog',
-    'BLOG_ENTRIES_DIRECTORY': str(Path.cwd().joinpath('entries')),
-    'BLOG_ABOUT_PATH': str(Path.cwd().joinpath('about.md')),
-    'FREEZER_DESTINATION': str(Path.cwd().joinpath('freeze')),
-    'FREEZER_DESTINATION_IGNORE': ['.git*']
+    'NAME': 'muhblog',
+    'ENTRIES_DIRECTORY': str(Path.cwd().joinpath('entries')),
+    'ABOUT_PATH': str(Path.cwd().joinpath('about.md')),
+    'OUTPUT_DIRECTORY': str(Path.cwd().joinpath('freeze')),
+    'OUTPUT_IGNORE': ['.git*']
 }
 CONFIG_FILE_PATH = str(Path.cwd().joinpath('config.json'))
 
 
 @database.atomic()
 def initialise_database(app: Flask) -> None:
-    entries_directory = Path(app.config['BLOG_ENTRIES_DIRECTORY'])
+    entries_directory = Path(app.config['ENTRIES_DIRECTORY'])
     if not entries_directory.exists():
         app.logger.error(
-            'BLOG_ENTRIES_DIRECTORY "%s" does not exist',
+            'ENTRIES_DIRECTORY "%s" does not exist',
             entries_directory
         )
         return
     if not entries_directory.is_dir():
         app.logger.error(
-            'BLOG_ENTRIES_DIRECTORY "%s" is not a directory',
+            'ENTRIES_DIRECTORY "%s" is not a directory',
             entries_directory
         )
         return
 
-    about_path = Path(app.config['BLOG_ABOUT_PATH'])
+    about_path = Path(app.config['ABOUT_PATH'])
     if not about_path.exists():
-        app.logger.error('BLOG_ABOUT_PATH "%s" does not exist', about_path)
+        app.logger.error('ABOUT_PATH "%s" does not exist', about_path)
         return
     if not about_path.is_file():
-        app.logger.error('BLOG_ABOUT_PATH "%s" is not a file', about_path)
+        app.logger.error('ABOUT_PATH "%s" is not a file', about_path)
         return
 
     app.logger.debug('Creating tables')
@@ -63,6 +63,8 @@ def create() -> Flask:
 
     app.config.from_mapping(DEFAULT_CONFIG)
     app.config.from_json(CONFIG_FILE_PATH)
+    app.config['FREEZER_DESTINATION'] = app.config['OUTPUT_DIRECTORY']
+    app.config['FREEZER_DESTINATION_IGNORE'] = app.config['OUTPUT_IGNORE']
     app.logger.setLevel('DEBUG' if app.debug else 'INFO')
 
     initialise_database(app)
@@ -70,7 +72,7 @@ def create() -> Flask:
     @app.cli.command()
     def freeze() -> None:
         freezer = Freezer(app)
-        app.logger.info('Freezing to %s', app.config['FREEZER_DESTINATION'])
+        app.logger.info('Freezing to %s', app.config['OUTPUT_DIRECTORY'])
         freezer.freeze()
 
     return app

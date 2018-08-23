@@ -1,4 +1,4 @@
-{% set BLOG_NAME = config['BLOG_NAME'] %}
+{% set NAME = config['NAME'] %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,14 +11,14 @@
               href="{{ url_for('static', filename='stylesheet.css') }}"/>
         <link rel="icon" type="image/png"
               href="{{ url_for('static', filename='favicon.png') }}"/>
-        <title>{{ BLOG_NAME if title is none else
-                  '{} | {}'.format(title, BLOG_NAME) }}</title>
+        <title>{{ NAME if title is none else
+                  '{} | {}'.format(title, NAME) }}</title>
     </head>
     <body class="flex column">
         <nav class="flex">
             <div class="flex centred">
                 <a href="{{ url_for('controllers.front') }}">
-                    {{ BLOG_NAME }}
+                    {{ NAME }}
                 </a>
                 <a href="{{ url_for('controllers.archive') }}">
                     archive
