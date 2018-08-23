@@ -1,6 +1,12 @@
 # muhlog
 
-A static site generator I use for [my blog](https://gregor-smith.github.io).
+A simple static site generator I use for [my blog](https://gregor-smith.github.io).
+
+* Looks decent on all devices
+* Generates lightweight, minified HTML and CSS (my front page is 4.51kB gzipped as of right now)
+* Use markdown files for entries
+* Has syntax highlighting for code blocks
+* Has [spoiler]spoiler tags[/spoiler]
 
 ## Usage
 Make sure you have `pipenv` and `yarn` available.
@@ -27,7 +33,7 @@ The actual text (markdown) goes here.
 ```
 Also write the text that is shown on the 'About' page. This is just a plain markdown file.
 
-Write a config file to `./config.json`. `OUTPUT_DIRECTORY` is where the generated HTML is stored. By default everything in the directory is deleted beforehand. `OUTPUT_IGNORE` is a list of globs to keep.
+Write a config file to `./config.json`. `OUTPUT_DIRECTORY` is where the generated HTML and CSS is stored. By default everything in the directory is deleted beforehand. `OUTPUT_IGNORE` is a list of globs to keep.
 ```json
 {
     "NAME": "my blog",
