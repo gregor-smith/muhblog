@@ -159,6 +159,12 @@ nav a:first-child {
     text-align: center
 }
 
+@media (min-width: $mobile-breakpoint) {
+    .entry header h1 {
+        text-align: unset
+    }
+}
+
 .entry time {
     margin: 0.375rem
 }
