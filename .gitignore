@@ -9,3 +9,4 @@ entries/
 freeze/
 about.md
 config.json
+.venv/
