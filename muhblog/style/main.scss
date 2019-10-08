@@ -1,21 +1,17 @@
-@import "node_modules/bootstrap/scss/bootstrap-reboot";
-
-
-$dark-border: 1px solid $gray-400;
-$light-border: 1px solid $gray-300;
+@import "node_modules/bootswatch/dist/cyborg/variables";
 
 $mobile-breakpoint: 37.5rem;
+$border: 1px solid $gray-700;
 
+$body-bg: $black;
+$body-color: $gray-400;
 
-body {
-    background-color: $gray-200;
-    color: $gray-700
-}
+$link-color: $gray-300;
+$link-hover-color: $white;
+$link-hover-decoration: none;
 
-a {
-    text-decoration: none;
-    color: $gray-600
-}
+@import "node_modules/bootstrap/scss/bootstrap-reboot";
+
 
 time {
     font-style: italic
@@ -24,7 +20,6 @@ time {
 code {
     font-size: 0.875rem;
     font-family: monospace;
-    background-color: $gray-200
 }
 
 pre {
@@ -41,42 +36,32 @@ h3 code {
 }
 
 nav {
-    background-color: $gray-700;
-    color: $gray-200;
+    align-items: center;
+    border-bottom: $border;
 
     a {
-        font-size: 1.125rem;
-        padding: 0.25rem 0.625rem;
-        color: $gray-200;
+        padding: 0.5rem 0.625rem;
 
         &:hover {
-            background-color: $gray-900;
-            color: $white;
             text-decoration: none
         }
 
         &:first-child {
-            margin-right: auto
+            font-size: 1.125rem;
+            color: $gray-200;
+            margin-right: auto;
         }
     }
 }
 
-#content {
-    border: $light-border;
-    background-color: $gray-100;
-
-    a:visited,
-    a:hover {
-        color: $gray-900
-    }
-}
 
 .front-entry {
-    padding: 0.5rem;
-    border-bottom: $dark-border;
+    margin: 0.5rem;
+    padding-bottom: 0.2rem;
+    border-bottom: $border;
 
     @media (min-width: $mobile-breakpoint) {
-        padding: 1rem 1.5rem
+        margin: 1rem 1.5rem
     }
 
     h1,
@@ -89,8 +74,7 @@ nav {
     }
 
     header a {
-        font-size: 1.5rem;
-        color: $gray-900
+        font-size: 1.5rem
     }
 }
 
@@ -129,7 +113,7 @@ nav {
     h2 {
         font-size: 1.5rem;
         margin: 1.5rem 0 0.625rem 0;
-        border-bottom: $dark-border
+        border-bottom: $border
     }
 
     h3 {
@@ -141,7 +125,7 @@ nav {
         align-items: center;
         margin-bottom: 1.5rem;
         padding-bottom: 0.375rem;
-        border-bottom: $dark-border;
+        border-bottom: $border;
 
         @media (min-width: $mobile-breakpoint) {
             align-items: baseline
@@ -166,7 +150,7 @@ nav {
     flex-direction: column;
     align-items: center;
     padding-top: 0.375rem;
-    border-top: $dark-border;
+    border-top: $border;
 
     @media (min-width: $mobile-breakpoint) {
         flex-direction: row;
@@ -204,11 +188,11 @@ nav {
 }
 
 .spoiler {
-    background-color: $black;
-    color: $black;
+    background-color: $white;
+    color: $white;
 
     &:hover {
-        color: $white
+        color: $black
     }
 }
 
@@ -239,13 +223,17 @@ nav {
         flex-direction: column
     }
 
-    &.centred {
+    &.centred-v {
         width: 100%;
         margin: 0 auto;
 
         @media (min-width: $mobile-breakpoint) {
             max-width: 50rem
         }
+    }
+
+    &.centred-h {
+        align-items: center
     }
 }
 

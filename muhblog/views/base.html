@@ -16,7 +16,7 @@
     </head>
     <body class="flex column">
         <nav class="flex">
-            <div class="flex centred">
+            <div class="flex centred-v centred-h">
                 <a href="{{ url_for('controllers.front') }}">
                     {{ NAME }}
                 </a>
@@ -29,7 +29,7 @@
             </div>
         </nav>
         <main class="flex">
-            <div class="flex centred column" id="content">
+            <div class="flex centred-v column">
                 {% block content %}
                 {% endblock %}
             </div>

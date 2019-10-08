@@ -24,7 +24,7 @@ class SpoilerRenderer(Renderer):
         return highlight(
             code=code,
             lexer=get_lexer_by_name(lang, stripall=True),
-            formatter=HtmlFormatter(noclasses=True)
+            formatter=HtmlFormatter(noclasses=True, style='monokai')
         )
 
 
