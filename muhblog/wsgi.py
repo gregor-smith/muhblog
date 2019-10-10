@@ -7,6 +7,7 @@ from . import controllers
 from .models import Entry, Tag, EntryTag, AboutPage
 from .database import database
 
+
 DEFAULT_CONFIG = {
     'NAME': 'muhblog',
     'ENTRIES_DIRECTORY': str(Path.cwd().joinpath('entries')),
@@ -72,7 +73,7 @@ def create() -> Flask:
     @app.cli.command()
     def freeze() -> None:
         freezer = Freezer(app)
-        app.logger.info('Freezing to %s', app.config['OUTPUT_DIRECTORY'])
+        app.logger.info('Freezing to "%s"', app.config['OUTPUT_DIRECTORY'])
         freezer.freeze()
 
     return app

@@ -2,11 +2,8 @@
 .mypy_cache/
 node_modules/
 *.pyc
-*.css
+muhblog/static/bundle.*
 *.map
 
-entries/
-freeze/
-about.md
 config.json
 .venv/
