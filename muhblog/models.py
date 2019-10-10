@@ -46,9 +46,10 @@ class Entry(MarkdownModel):
         return instance
 
     def render_snub(self) -> str:
-        snub = re.search(rf'^(.{{1,{SNUB_LENGTH}}}[\.\!\?])', self.text) \
-            .group(1)
-        return markdown.render(snub)
+        match = re.search(rf'^(.{{1,{SNUB_LENGTH}}}[\.\!\?])', self.text)
+        if match is None:
+            return ''
+        return markdown.render(match.group(1))
 
     def next_entry(self) -> Optional['Entry']:
         try:

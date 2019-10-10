@@ -2,13 +2,24 @@ import re
 from typing import Dict, Tuple, Optional, Union, List
 
 from flask import Markup
-from mistune import Markdown, Renderer, escape
+from mistune import Markdown, Renderer, escape, escape_link
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters.html import HtmlFormatter
 
 
 class SpoilerRenderer(Renderer):
+    def image(self, src: str, title: str, text: str) -> str:
+        src = escape_link(src)
+        html = f'<img data-lazy-url="{src}"'
+        if title:
+            title = escape(title, quote=True)
+            html = f'{html} title="{title}"'
+        if text:
+            text = escape(text, quote=True)
+            html = f'{html} alt="{text}"'
+        return f'{html}/>'
+
     def paragraph(self, text: str) -> str:
         replaced = re.sub(
             pattern=r'\[spoiler\](.+?)\[/spoiler\]',

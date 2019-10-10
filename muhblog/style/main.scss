@@ -262,3 +262,9 @@ nav {
         content: "▶"
     }
 }
+
+
+img[data-lazy-url] {
+    min-height: 1rem;
+    min-width: 1rem;
+}
