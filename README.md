@@ -1,19 +1,19 @@
 # muhlog
 
-A simple static site generator I use for [my blog](https://gregor-smith.github.io).
+A simple static site generator I use for my blog.
 
 * Looks decent on all devices
-* Generates lightweight, minified HTML and CSS (my front page is 4.51kB gzipped as of right now)
+* Generates lightweight, minified HTML and CSS.
 * Use markdown files for entries
 * Has syntax highlighting for code blocks
 * Has [spoiler]spoiler tags[/spoiler]
 
 ## Usage
-Make sure you have `pipenv` and `yarn` available.
+Make sure you have `poetry` and `yarn` available.
 
 Install the backend dependencies:
 ```zsh
-$ pipenv install
+$ poetry install
 ```
 
 Install the frontend dependencies:
