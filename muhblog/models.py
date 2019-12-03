@@ -5,6 +5,7 @@ from typing import Optional
 from flask import Markup
 from slugify import slugify
 from peewee import TextField, DateTimeField, ForeignKeyField, CharField
+from markdown_metadata import parse_metadata
 
 from . import markdown
 from .database import BaseModel
@@ -28,15 +29,15 @@ class Entry(MarkdownModel):
 
     @classmethod
     def create(cls, text: str) -> 'Entry':
-        metadata, text = markdown.parse_metadata(text)
+        metadata, text = parse_metadata(text)
 
         instance = cls(
             slug=slugify(
-                metadata['title'],
+                metadata['title'][0],
                 max_length=SLUG_LENGTH
             ),
-            title=metadata['title'],
-            date=datetime.strptime(metadata['date'], DATE_FORMAT),
+            title=metadata['title'][0],
+            date=datetime.strptime(metadata['date'][0], DATE_FORMAT),
             text=text
         )
         instance.save()

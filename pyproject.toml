@@ -16,6 +16,7 @@ frozen-flask = "^0.15.0"
 django-htmlmin = "^0.11.0"
 python-dotenv = "^0.10.3"
 pygments = "^2.4"
+markdown-metadata = {git = "git@github.com:gregor-smith/markdown-metadata.git"}
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7"
