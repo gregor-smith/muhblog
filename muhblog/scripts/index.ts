@@ -1,7 +1,7 @@
 import '../style/main.scss'
 
 
-document.querySelectorAll('img[data-lazy-url]')
+document.querySelectorAll('img')
     .forEach(element => {
         const url = element.getAttribute('data-lazy-url')
         if (url === null) {
