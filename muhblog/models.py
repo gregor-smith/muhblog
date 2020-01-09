@@ -11,7 +11,7 @@ from . import markdown
 from .database import BaseModel
 
 SLUG_LENGTH = 100
-SNUB_LENGTH = 300
+STUB_LENGTH = 600
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 
 
@@ -46,8 +46,8 @@ class Entry(MarkdownModel):
 
         return instance
 
-    def render_snub(self) -> str:
-        match = re.search(rf'^(.{{1,{SNUB_LENGTH}}}[\.\!\?])', self.text)
+    def render_stub(self) -> str:
+        match = re.search(rf'^(.{{1,{STUB_LENGTH}}}[\.\!\?])', self.text)
         if match is None:
             return ''
         return markdown.render(match.group(1))

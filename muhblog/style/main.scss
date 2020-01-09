@@ -29,6 +29,13 @@ pre {
     overflow: auto
 }
 
+h1, h2, h3, h4, h5, h6, nav, #navigation, #pagination {
+    font-family: serif;
+    font-variant: small-caps;
+    font-feature-settings: initial
+}
+
+
 h1 code,
 h2 code,
 h3 code {
@@ -69,7 +76,7 @@ nav {
         margin: 0
     }
 
-    .snub {
+    .stub {
         padding: 1rem 0 0.625rem 0
     }
 
@@ -267,4 +274,5 @@ nav {
 img[data-lazy-url] {
     min-height: 1rem;
     min-width: 1rem;
+    max-width: 100%;
 }
